@@ -21,7 +21,34 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
+            // 1. Utilisateur de base
             UserSeeder::class,
+            
+            // 2. Structure de base
+            UniversitySeeder::class,
+            SiteSeeder::class,
+            RoomSeeder::class,
+            EquipmentTypeSeeder::class,
+            EquipmentSeeder::class,
+            
+            // 3. Cours et permissions
+            CourseSeeder::class,
+            CourseSitePermissionSeeder::class,
+            CourseRequiredEquipmentSeeder::class,
+            
+            // 4. Années académiques et groupes
+            AcademicYearSeeder::class,
+            GroupSeeder::class,
+            
+            // 5. Sessions et réservations
+            SessionSeeder::class,
+            SessionGroupSeeder::class,
+            SessionEquipmentSeeder::class,
+            
+            // 6. Fériés
+            HolidaySeeder::class,
+            
+            // 7. Ancien seeder de produits (à supprimer plus tard)
             ProductSeeder::class,
         ]);
     }

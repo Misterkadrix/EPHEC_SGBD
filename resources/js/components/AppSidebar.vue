@@ -20,6 +20,56 @@ const mainNavItems: NavItem[] = [
         href: '/products',
         icon: PackageSearch,
     },
+    {
+        title: 'Universities',
+        href: '/universities',
+        icon: BookOpen,
+    },
+    {
+        title: 'Sites',
+        href: '/sites',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Salles',
+        href: '/rooms',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Types d\'équipements',
+        href: '/equipment-types',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Équipements',
+        href: '/equipment',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Cours',
+        href: '/courses',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Années académiques',
+        href: '/academic-years',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Groupes',
+        href: '/groups',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Sessions de cours',
+        href: '/course-sessions',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Fériés',
+        href: '/holidays',
+        icon: LayoutGrid,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
