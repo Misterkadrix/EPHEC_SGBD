@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch, nextTick } from 'vue';
 import FormActions from '@/components/ui/FormActions.vue';
+import SessionStatusBadge from '@/components/SessionStatusBadge.vue';
 
 interface University {
     id: number;
@@ -48,6 +49,61 @@ interface CourseSession {
     room_id: number;
     start_at: string;
     end_at: string;
+    academicYear?: {
+        id: number;
+        name: string;
+        university_id: number;
+        university?: {
+            id: number;
+            name: string;
+            code: string;
+        };
+    };
+    course?: {
+        id: number;
+        code: string;
+        title: string;
+        university_id: number;
+        university?: {
+            id: number;
+            name: string;
+            code: string;
+        };
+    };
+    site?: {
+        id: number;
+        name: string;
+        university_id: number;
+        university?: {
+            id: number;
+            name: string;
+            code: string;
+        };
+    };
+    room?: {
+        id: number;
+        name: string;
+        site_id: number;
+        site?: {
+            id: number;
+            name: string;
+        };
+    };
+    validation_status?: {
+        status: 'future' | 'ongoing' | 'recently_ended' | 'past';
+        label: string;
+        description: string;
+        can_modify: boolean;
+    };
+    can_modify?: {
+        can_modify: boolean;
+        can_delete: boolean;
+        can_change_room: boolean;
+        can_change_groups: boolean;
+        can_change_schedule: boolean;
+        reason: string;
+        status: string;
+    };
 }
 
 interface Props {
@@ -71,6 +127,23 @@ console.log('Props reçues dans edit:', {
     rooms: props.rooms
 });
 
+// Debug détaillé de la session
+if (props.session) {
+    console.log('🔍 Détails de la session:', {
+        id: props.session.id,
+        academic_year_id: props.session.academic_year_id,
+        course_id: props.session.course_id,
+        site_id: props.session.site_id,
+        room_id: props.session.room_id,
+        start_at: props.session.start_at,
+        end_at: props.session.end_at,
+        academicYear: props.session.academicYear,
+        course: props.session.course,
+        site: props.session.site,
+        room: props.session.room
+    });
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Sessions de cours', href: '/course-sessions' },
     { title: 'Edit', href: `/course-sessions/${props.session?.id || 'unknown'}/edit` },
@@ -86,11 +159,13 @@ const form = useForm({
     end_at: '',
 });
 
-// Initialiser complètement le formulaire avec les données existantes
+
+
+// Initialiser le formulaire directement avec les données disponibles
 const initializeForm = () => {
     if (!props.session) return;
     
-    console.log('Initialisation du formulaire avec session:', props.session);
+    console.log('🚀 Initialisation du formulaire avec session:', props.session);
     
     // Initialiser tous les champs
     form.academic_year_id = props.session.academic_year_id?.toString() || '';
@@ -103,49 +178,68 @@ const initializeForm = () => {
         const startDate = new Date(props.session.start_at);
         if (!isNaN(startDate.getTime())) {
             form.start_at = startDate.toISOString().slice(0, 16);
-        } else {
-            console.error('Date de début invalide:', props.session.start_at);
-            form.start_at = '';
+            console.log('📅 Date de début formatée:', form.start_at);
         }
     }
     if (props.session.end_at) {
         const endDate = new Date(props.session.end_at);
         if (!isNaN(endDate.getTime())) {
             form.end_at = endDate.toISOString().slice(0, 16);
-        } else {
-            console.error('Date de fin invalide:', props.session.end_at);
-            form.end_at = '';
+            console.log('📅 Date de fin formatée:', form.end_at);
         }
     }
     
-    // Déterminer l'université à partir de l'année académique
-    const academicYear = props.academicYears.find(year => year.id === props.session.academic_year_id);
-    if (academicYear && academicYear.university_id) {
-        form.university_id = academicYear.university_id.toString();
-        console.log('Université déterminée à partir de l\'année académique:', form.university_id);
-    } else {
-        // Fallback: essayer de déterminer l'université à partir du cours
+    // Déterminer l'université
+    if (props.academicYears && props.academicYears.length > 0) {
+        const academicYear = props.academicYears.find(year => year.id === props.session.academic_year_id);
+        if (academicYear && academicYear.university_id) {
+            form.university_id = academicYear.university_id.toString();
+            console.log('🏫 Université déterminée:', form.university_id);
+        }
+    }
+    
+    if (!form.university_id && props.courses && props.courses.length > 0) {
         const course = props.courses.find(c => c.id === props.session.course_id);
         if (course && course.university_id) {
             form.university_id = course.university_id.toString();
-            console.log('Université déterminée à partir du cours:', form.university_id);
+            console.log('🏫 Université déterminée depuis cours:', form.university_id);
         }
     }
     
-    console.log('Formulaire initialisé:', form.data());
+    console.log('✅ Formulaire initialisé:', form.data());
 };
 
 // Initialiser au chargement
 onMounted(() => {
-    // Vérification de sécurité
+    console.log('🔄 onMounted - Initialisation du formulaire');
+    
     if (!props.session) {
-        console.error('Session non trouvée dans les props:', props);
-        window.location.href = route('course-sessions.index');
+        console.error('❌ Session non trouvée dans les props');
         return;
     }
     
+    // Initialiser immédiatement
     initializeForm();
+    
+    // Vérifier que l'initialisation a fonctionné
+    console.log('🔍 Vérification après initialisation:', {
+        university_id: form.university_id,
+        academic_year_id: form.academic_year_id,
+        course_id: form.course_id,
+        site_id: form.site_id,
+        room_id: form.room_id,
+        start_at: form.start_at,
+        end_at: form.end_at
+    });
 });
+
+// Watcher pour les changements de session
+watch(() => props.session, (newSession) => {
+    if (newSession) {
+        console.log('📝 Session mise à jour, réinitialisation du formulaire');
+        initializeForm();
+    }
+}, { immediate: true });
 
 const submit = () => {
     form.put(route('course-sessions.update', props.session.id));
@@ -233,6 +327,14 @@ const updateEndTime = () => {
                 <CardHeader>
                     <CardTitle>Modifier la session de cours</CardTitle>
                     <CardDescription>Mettez à jour les informations de la session</CardDescription>
+                    
+                    <!-- Badge de statut de la session -->
+                    <div v-if="session.validation_status" class="mt-4">
+                        <SessionStatusBadge 
+                            :status="session.validation_status" 
+                            :can-modify="session.can_modify" 
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <form @submit.prevent="submit" class="space-y-6">

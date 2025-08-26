@@ -9,6 +9,7 @@ use App\Models\Site;
 use App\Models\Room;
 use App\Models\Group;
 use App\Models\Equipment;
+use App\Services\SessionValidationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Validator;
@@ -16,6 +17,13 @@ use Carbon\Carbon;
 
 class CourseSessionController extends Controller
 {
+    protected $sessionValidationService;
+
+    public function __construct(SessionValidationService $sessionValidationService)
+    {
+        $this->sessionValidationService = $sessionValidationService;
+    }
+
     /**
      * Afficher la liste des sessions
      */
@@ -29,9 +37,15 @@ class CourseSessionController extends Controller
             'sessionGroups.group',
             'sessionEquipment.equipment.type'
         ])->get();
+
+        // Ajouter le statut de validation pour chaque session
+        $sessionsWithStatus = $sessions->map(function ($session) {
+            $session->validation_status = $this->sessionValidationService->getSessionStatus($session);
+            return $session;
+        });
         
         return Inertia::render('course-sessions/index', [
-            'sessions' => $sessions
+            'sessions' => $sessionsWithStatus
         ]);
     }
 
@@ -184,10 +198,45 @@ class CourseSessionController extends Controller
     /**
      * Afficher le formulaire de modification
      */
-    public function edit(CourseSession $session)
+    public function edit($id)
     {
+        // Debug: Vérifier l'ID reçu
+        \Log::info('CourseSessionController::edit - ID reçu', [
+            'id' => $id,
+            'id_type' => gettype($id),
+            'route_parameters' => request()->route()->parameters(),
+        ]);
+        
         // Charger la session avec ses relations
-        $session->load(['academicYear.university', 'course.university', 'site.university', 'room.site']);
+        $session = CourseSession::with([
+            'academicYear.university', 
+            'course.university', 
+            'site.university', 
+            'room.site'
+        ])->find($id);
+        
+        // Debug: Vérifier que la session a été trouvée
+        if (!$session) {
+            \Log::error('CourseSessionController::edit - Session non trouvée', [
+                'requested_id' => $id,
+                'session_exists_after_find' => 'NO'
+            ]);
+            abort(404, 'Session non trouvée');
+        }
+        
+        \Log::info('CourseSessionController::edit - Session chargée avec relations', [
+            'session_id' => $session->id,
+            'relations_loaded' => [
+                'academicYear' => $session->academicYear ? 'YES' : 'NO',
+                'course' => $session->course ? 'YES' : 'NO',
+                'site' => $session->site ? 'YES' : 'NO',
+                'room' => $session->room ? 'YES' : 'NO',
+            ]
+        ]);
+        
+        // Ajouter le statut de validation pour la session
+        $session->validation_status = $this->sessionValidationService->getSessionStatus($session);
+        $session->can_modify = $this->sessionValidationService->canBeModified($session);
         
         $universities = \App\Models\University::all();
         $academicYears = AcademicYear::with('university')->get();
@@ -196,6 +245,30 @@ class CourseSessionController extends Controller
         $rooms = Room::with('site')->get();
         $groups = Group::with('university')->get();
         $equipment = Equipment::with(['type', 'site'])->where('is_mobile', true)->get();
+        
+        // Debug: Log des données envoyées avec plus de détails
+        \Log::info('CourseSessionController::edit - Données envoyées', [
+            'session_id' => $session->id,
+            'session_data' => [
+                'academic_year_id' => $session->academic_year_id,
+                'course_id' => $session->course_id,
+                'site_id' => $session->site_id,
+                'room_id' => $session->room_id,
+                'start_at' => $session->start_at,
+                'end_at' => $session->end_at,
+            ],
+            'relations_loaded' => [
+                'academicYear' => $session->academicYear ? $session->academicYear->toArray() : null,
+                'course' => $session->course ? $session->course->toArray() : null,
+                'site' => $session->site ? $session->site->toArray() : null,
+                'room' => $session->room ? $session->room->toArray() : null,
+            ],
+            'universities_count' => $universities->count(),
+            'academic_years_count' => $academicYears->count(),
+            'courses_count' => $courses->count(),
+            'sites_count' => $sites->count(),
+            'rooms_count' => $rooms->count(),
+        ]);
         
         return Inertia::render('course-sessions/edit', [
             'session' => $session,
@@ -214,6 +287,13 @@ class CourseSessionController extends Controller
      */
     public function update(Request $request, CourseSession $session)
     {
+        // Vérifier si la session peut être modifiée
+        $validation = $this->sessionValidationService->canBeModified($session);
+        
+        if (!$validation['can_modify']) {
+            return back()->withErrors(['error' => $validation['reason']])->withInput();
+        }
+
         $validator = Validator::make($request->all(), [
             'academic_year_id' => 'required|exists:academic_years,id',
             'course_id' => 'required|exists:courses,id',
@@ -311,6 +391,13 @@ class CourseSessionController extends Controller
      */
     public function destroy(CourseSession $session)
     {
+        // Vérifier si la session peut être supprimée
+        $validation = $this->sessionValidationService->canBeDeleted($session);
+        
+        if (!$validation['can_delete']) {
+            return back()->withErrors(['error' => $validation['reason']]);
+        }
+
         try {
             $session->delete();
 

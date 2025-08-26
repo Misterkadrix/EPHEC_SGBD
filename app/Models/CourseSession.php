@@ -56,4 +56,12 @@ class CourseSession extends Model
     {
         return $this->hasMany(SessionEquipment::class, 'session_id');
     }
+    
+    /**
+     * Obtenir le nom de la clé de route pour le modèle
+     */
+    public function getRouteKeyName()
+    {
+        return 'id';
+    }
 }

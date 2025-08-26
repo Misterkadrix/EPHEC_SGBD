@@ -4,6 +4,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import SessionStatusBadge from '@/components/SessionStatusBadge.vue';
 
 interface CourseSession {
     id: number;
@@ -27,6 +28,12 @@ interface CourseSession {
         name: string;
     };
     created_at: string;
+    validation_status?: {
+        status: 'future' | 'ongoing' | 'recently_ended' | 'past';
+        label: string;
+        description: string;
+        can_modify: boolean;
+    };
 }
 
 interface Props {
@@ -106,6 +113,22 @@ const getDuration = (startAt: string, endAt: string) => {
                             </div>
                             <div class="text-sm text-gray-600">
                                 <strong>Année:</strong> {{ session.academic_year.name }}
+                            </div>
+                            
+                            <!-- Badge de statut de la session -->
+                            <div v-if="session.validation_status" class="mt-3">
+                                <SessionStatusBadge 
+                                    :status="session.validation_status" 
+                                    :can-modify="{
+                                        can_modify: session.validation_status.can_modify,
+                                        can_delete: session.validation_status.can_modify,
+                                        can_change_room: session.validation_status.can_modify,
+                                        can_change_groups: session.validation_status.can_modify,
+                                        can_change_schedule: session.validation_status.can_modify,
+                                        reason: session.validation_status.can_modify ? 'Modifications autorisées' : 'Modifications limitées',
+                                        status: session.validation_status.status
+                                    }" 
+                                />
                             </div>
                         </div>
                         <div class="flex justify-between items-center mt-4">
