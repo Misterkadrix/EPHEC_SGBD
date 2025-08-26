@@ -5,30 +5,36 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid,  PackageSearch  } from 'lucide-vue-next';
+import { 
+    BookOpen, 
+    LayoutGrid, 
+    Building2, 
+    MapPin, 
+    Users, 
+    Calendar, 
+    GraduationCap, 
+    Wrench, 
+    Package, 
+    Clock,
+    Home
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Product',
-
-        href: '/products',
-        icon: PackageSearch,
+        icon: Home,
     },
     {
         title: 'Universities',
         href: '/universities',
-        icon: BookOpen,
+        icon: Building2,
     },
     {
         title: 'Sites',
         href: '/sites',
-        icon: LayoutGrid,
+        icon: MapPin,
     },
     {
         title: 'Salles',
@@ -38,52 +44,41 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Types d\'équipements',
         href: '/equipment-types',
-        icon: LayoutGrid,
+        icon: Package,
     },
     {
         title: 'Équipements',
         href: '/equipment',
-        icon: LayoutGrid,
+        icon: Wrench,
     },
     {
         title: 'Cours',
         href: '/courses',
-        icon: LayoutGrid,
+        icon: GraduationCap,
     },
     {
         title: 'Années académiques',
         href: '/academic-years',
-        icon: LayoutGrid,
+        icon: Calendar,
     },
     {
         title: 'Groupes',
         href: '/groups',
-        icon: LayoutGrid,
+        icon: Users,
     },
     {
         title: 'Sessions de cours',
         href: '/course-sessions',
-        icon: LayoutGrid,
+        icon: Clock,
     },
     {
         title: 'Fériés',
         href: '/holidays',
-        icon: LayoutGrid,
+        icon: Calendar,
     },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Github Repo',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const footerNavItems: NavItem[] = [];
 </script>
 
 <template>

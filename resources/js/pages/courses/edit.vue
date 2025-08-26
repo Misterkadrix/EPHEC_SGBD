@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FormActions from '@/components/ui/FormActions.vue';
 
 interface University {
     id: number;
@@ -42,6 +43,12 @@ const form = useForm({
 
 const submit = () => {
     form.put(route('courses.update', props.course.id));
+};
+
+const cancel = () => {
+    // Réinitialiser le formulaire avant de naviguer
+    form.reset();
+    router.visit('/courses');
 };
 </script>
 
@@ -109,12 +116,12 @@ const submit = () => {
                             <div v-if="form.errors.description" class="text-red-500 text-sm">{{ form.errors.description }}</div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="form.university_id && form.code && form.title"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

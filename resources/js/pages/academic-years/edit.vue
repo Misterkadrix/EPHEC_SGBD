@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FormActions from '@/components/ui/FormActions.vue';
+import FieldError from '@/components/ui/FieldError.vue';
 
 interface University {
     id: number;
@@ -37,13 +40,34 @@ const breadcrumbs: BreadcrumbItem[] = [
 const form = useForm({
     university_id: props.academicYear.university_id.toString(),
     name: props.academicYear.name,
-    start_date: props.academicYear.start_date,
-    end_date: props.academicYear.end_date,
+    start_date: props.academicYear.start_date ? new Date(props.academicYear.start_date).toISOString().split('T')[0] : '',
+    end_date: props.academicYear.end_date ? new Date(props.academicYear.end_date).toISOString().split('T')[0] : '',
     state: props.academicYear.state,
 });
 
+// Validation des dates
+const validateDates = (): boolean => {
+    if (!form.start_date || !form.end_date) return false;
+    const startDate = new Date(form.start_date);
+    const endDate = new Date(form.end_date);
+    return startDate < endDate;
+};
+
+const isFormValid = computed(() => {
+    return form.university_id && form.name && form.start_date && form.end_date && validateDates();
+});
+
 const submit = () => {
+    if (!isFormValid.value) {
+        return;
+    }
     form.put(route('academic-years.update', props.academicYear.id));
+};
+
+const cancel = () => {
+    // Réinitialiser le formulaire avant de naviguer
+    form.reset();
+    router.visit('/academic-years');
 };
 </script>
 
@@ -95,7 +119,8 @@ const submit = () => {
                                     type="date" 
                                     :class="{ 'border-red-500': form.errors.start_date }" 
                                 />
-                                <div v-if="form.errors.start_date" class="text-red-500 text-sm">{{ form.errors.start_date }}</div>
+                                <FieldError :error="form.errors.start_date" />
+                            <FieldError v-if="form.start_date && form.end_date && !validateDates()" error="La date de début doit être antérieure à la date de fin" />
                             </div>
                             <div class="space-y-2">
                                 <Label for="end_date">Date de fin</Label>
@@ -123,12 +148,12 @@ const submit = () => {
                             <div v-if="form.errors.state" class="text-red-500 text-sm">{{ form.errors.state }}</div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="isFormValid"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

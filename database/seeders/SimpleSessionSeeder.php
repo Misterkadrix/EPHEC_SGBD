@@ -10,7 +10,7 @@ use App\Models\Site;
 use App\Models\Room;
 use Carbon\Carbon;
 
-class SessionSeeder extends Seeder
+class SimpleSessionSeeder extends Seeder
 {
     public function run()
     {
@@ -20,10 +20,10 @@ class SessionSeeder extends Seeder
         // Dates de base pour septembre 2024
         $baseDate = Carbon::create(2024, 9, 2); // 2 septembre 2024
         
-        foreach ($groups as $group) {
-            // Créer 3 sessions par groupe avec des heures différentes
-            for ($i = 0; $i < 3; $i++) {
-                $sessionDate = $baseDate->copy()->addDays($i);
+        foreach ($groups as $index => $group) {
+            // Créer 2 sessions par groupe avec des dates et heures différentes
+            for ($i = 0; $i < 2; $i++) {
+                $sessionDate = $baseDate->copy()->addDays($index * 2 + $i);
                 
                 // Trouver un cours de la même université
                 $course = Course::where('university_id', $group->university_id)->first();
@@ -35,14 +35,14 @@ class SessionSeeder extends Seeder
                 
                 if (!$site) continue;
                 
-                // Trouver une salle du site (différente pour chaque groupe)
+                // Trouver une salle du site
                 $rooms = Room::where('site_id', $site->id)->get();
-                $room = $rooms->get($i % $rooms->count());
+                $room = $rooms->get($index % $rooms->count());
                 
                 if (!$room) continue;
                 
-                // Heure différente pour chaque groupe
-                $hour = 9 + ($i * 2) + ($group->id % 3);
+                // Heure unique pour chaque groupe
+                $hour = 9 + ($index * 2) + $i;
                 
                 // Créer la session
                 $session = CourseSession::create([

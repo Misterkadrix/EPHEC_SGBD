@@ -40,6 +40,7 @@ class CourseSessionController extends Controller
      */
     public function create()
     {
+        $universities = \App\Models\University::all();
         $academicYears = AcademicYear::with('university')->get();
         $courses = Course::with('university')->get();
         $sites = Site::with('university')->get();
@@ -47,7 +48,17 @@ class CourseSessionController extends Controller
         $groups = Group::with('university')->get();
         $equipment = Equipment::with(['type', 'site'])->where('is_mobile', true)->get();
         
+        // Debug: Log des données envoyées
+        \Log::info('CourseSessionController::create - Données envoyées', [
+            'universities_count' => $universities->count(),
+            'academic_years_count' => $academicYears->count(),
+            'courses_count' => $courses->count(),
+            'sites_count' => $sites->count(),
+            'rooms_count' => $rooms->count(),
+        ]);
+        
         return Inertia::render('course-sessions/create', [
+            'universities' => $universities,
             'academicYears' => $academicYears,
             'courses' => $courses,
             'sites' => $sites,

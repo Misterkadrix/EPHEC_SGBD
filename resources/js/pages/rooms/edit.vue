@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FormActions from '@/components/ui/FormActions.vue';
+import FieldError from '@/components/ui/FieldError.vue';
 
 interface Site {
     id: number;
@@ -43,8 +46,25 @@ const form = useForm({
     description: props.room.description || '',
 });
 
+// Validation de la capacité
+const validateCapacity = (value: string): boolean => {
+    const capacity = parseInt(value);
+    return capacity >= 20 && capacity <= 200;
+};
+
+const isFormValid = computed(() => {
+    return form.site_id && form.name && validateCapacity(form.capacity);
+});
+
 const submit = () => {
+    if (!isFormValid.value) {
+        return;
+    }
     form.put(route('rooms.update', props.room.id));
+};
+
+const cancel = () => {
+    router.visit('/rooms');
 };
 </script>
 
@@ -83,8 +103,16 @@ const submit = () => {
 
                         <div class="space-y-2">
                             <Label for="capacity">Capacité</Label>
-                            <Input id="capacity" v-model="form.capacity" type="number" min="1" :class="{ 'border-red-500': form.errors.capacity }" />
-                            <div v-if="form.errors.capacity" class="text-red-500 text-sm">{{ form.errors.capacity }}</div>
+                            <Input 
+                                id="capacity" 
+                                v-model="form.capacity" 
+                                type="number" 
+                                min="20" 
+                                max="200" 
+                                :class="{ 'border-red-500': form.errors.capacity || !validateCapacity(form.capacity) }" 
+                            />
+                            <FieldError :error="form.errors.capacity" />
+                            <FieldError v-if="form.capacity && !validateCapacity(form.capacity)" error="La capacité doit être entre 20 et 200 étudiants" />
                         </div>
 
                         <div class="space-y-2">
@@ -99,12 +127,12 @@ const submit = () => {
                             <div v-if="form.errors.description" class="text-red-500 text-sm">{{ form.errors.description }}</div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="isFormValid"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import PlaceholderPattern from '../components/PlaceholderPattern.vue';
+import { Head, usePage } from '@inertiajs/vue3';
+import Calendar from '../components/SimpleCalendar.vue';
+
+const page = usePage();
+const calendarData = (page.props as any).calendarData;
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
     },
-    
 ];
 </script>
 
@@ -17,20 +19,29 @@ const breadcrumbs: BreadcrumbItem[] = [
     <Head title="Dashboard" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-            <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-                <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
-                <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
-                <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
+        <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-6 overflow-x-auto">
+            <!-- Titre et description -->
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    SGBD_KAD - Tableau de bord
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Gestion des sessions de cours et planning universitaire
+                </p>
             </div>
-            <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                <PlaceholderPattern />
+
+            <!-- Calendrier principal -->
+            <div class="w-full">
+                <div v-if="calendarData && calendarData.universities && calendarData.universities.length > 0">
+                    <Calendar 
+                        :universities="calendarData.universities"
+                        :groups="calendarData.groups || []"
+                        :sessions="calendarData.sessions || []"
+                    />
+                </div>
+                <div v-else class="text-center py-8">
+                    <p class="text-gray-500 dark:text-gray-400">Chargement du calendrier...</p>
+                </div>
             </div>
         </div>
     </AppLayout>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { onMounted } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FormActions from '@/components/ui/FormActions.vue';
 
 interface University {
     id: number;
@@ -45,11 +46,34 @@ const form = useForm({
 const initializeForm = () => {
     if (props.holiday) {
         form.name = props.holiday.name || '';
-        form.date = props.holiday.date || '';
+        
+        // Formater la date pour l'input HTML de type "date" (YYYY-MM-DD)
+        if (props.holiday.date) {
+            // Gérer différents formats de date possibles
+            let dateObj;
+            if (typeof props.holiday.date === 'string') {
+                dateObj = new Date(props.holiday.date);
+            } else {
+                dateObj = props.holiday.date;
+            }
+            
+            // Vérifier que la date est valide
+            if (!isNaN(dateObj.getTime())) {
+                form.date = dateObj.toISOString().split('T')[0]; // Format YYYY-MM-DD
+            } else {
+                console.error('Date invalide:', props.holiday.date);
+                form.date = '';
+            }
+        } else {
+            form.date = '';
+        }
+        
         form.year = props.holiday.year?.toString() || '';
         form.university_id = props.holiday.university_id?.toString() || '';
         
         console.log('Férié initialisé:', props.holiday);
+        console.log('Date brute:', props.holiday.date);
+        console.log('Date formatée:', form.date);
         console.log('Formulaire initialisé:', form.data());
     }
 };
@@ -60,6 +84,12 @@ onMounted(() => {
 
 const submit = () => {
     form.put(route('holidays.update', props.holiday.id));
+};
+
+const cancel = () => {
+    // Réinitialiser le formulaire avant de naviguer
+    form.reset();
+    router.visit('/holidays');
 };
 
 // Extraire l'année de la date sélectionnée
@@ -136,12 +166,12 @@ const updateYear = () => {
                             <p class="text-xs text-gray-500">Laissez vide pour un férié global, ou sélectionnez une université pour un férié spécifique</p>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="form.name && form.date && form.year"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

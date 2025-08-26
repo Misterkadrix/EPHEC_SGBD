@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface Group {
     id: number;
@@ -39,6 +41,35 @@ const getSizeStatus = (quantity: number, minSize: number, maxSize: number) => {
     if (quantity < minSize) return { color: 'bg-red-100 text-red-800', label: 'Trop petit' };
     if (quantity > maxSize) return { color: 'bg-orange-100 text-orange-800', label: 'Trop grand' };
     return { color: 'bg-green-100 text-green-800', label: 'OK' };
+};
+
+// État pour la popup de suppression
+const showDeleteDialog = ref(false);
+const groupToDelete = ref<{ id: number; name: string } | null>(null);
+
+const openDeleteDialog = (group: Group) => {
+    groupToDelete.value = { id: group.id, name: group.name };
+    showDeleteDialog.value = true;
+};
+
+const closeDeleteDialog = () => {
+    showDeleteDialog.value = false;
+    groupToDelete.value = null;
+};
+
+const confirmDelete = () => {
+    if (!groupToDelete.value) return;
+    
+    router.delete(route('groups.destroy', groupToDelete.value.id), {
+        onSuccess: () => {
+            closeDeleteDialog();
+            // La suppression sera gérée par la redirection
+        },
+        onError: (errors) => {
+            console.error('Erreur lors de la suppression:', errors);
+            alert('Erreur lors de la suppression du groupe');
+        }
+    });
 };
 </script>
 
@@ -98,7 +129,12 @@ const getSizeStatus = (quantity: number, minSize: number, maxSize: number) => {
                                 <Link :href="route('groups.edit', group.id)">
                                     <Button variant="outline" size="sm">Modifier</Button>
                                 </Link>
-                                <Button variant="outline" size="sm" class="text-red-600 hover:text-red-700">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    class="text-red-600 hover:text-red-700"
+                                    @click="openDeleteDialog(group)"
+                                >
                                     Supprimer
                                 </Button>
                             </div>
@@ -117,5 +153,36 @@ const getSizeStatus = (quantity: number, minSize: number, maxSize: number) => {
                 </Link>
             </div>
         </div>
+        
+        <!-- Popup de confirmation de suppression -->
+        <Dialog :open="showDeleteDialog" @update:open="showDeleteDialog = $event">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle class="text-red-600">Confirmer la suppression</DialogTitle>
+                    <DialogDescription>
+                        Êtes-vous sûr de vouloir supprimer le groupe 
+                        <span class="font-semibold text-gray-900">{{ groupToDelete?.name }}</span> ?
+                        <br>
+                        <span class="text-red-600 text-sm">Cette action est irréversible.</span>
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="flex space-x-2">
+                    <Button 
+                        variant="outline" 
+                        @click="closeDeleteDialog"
+                        class="flex-1"
+                    >
+                        Annuler
+                    </Button>
+                    <Button 
+                        variant="destructive" 
+                        @click="confirmDelete"
+                        class="flex-1"
+                    >
+                        Supprimer définitivement
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>

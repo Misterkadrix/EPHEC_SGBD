@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FormActions from '@/components/ui/FormActions.vue';
 
 
 interface University {
@@ -47,6 +48,10 @@ const form = useForm({
 
 const submit = () => {
     form.put(route('sites.update', props.site.id));
+};
+
+const cancel = () => {
+    router.visit('/sites');
 };
 
 const days = [
@@ -128,12 +133,12 @@ const days = [
                             <div v-if="form.errors.active_days" class="text-red-500 text-sm">{{ form.errors.active_days }}</div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="true"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

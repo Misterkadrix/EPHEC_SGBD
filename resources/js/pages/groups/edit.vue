@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { computed } from 'vue';
+import FormActions from '@/components/ui/FormActions.vue';
 
 interface University {
     id: number;
@@ -63,6 +64,12 @@ const form = useForm({
 
 const submit = () => {
     form.put(route('groups.update', props.group.id));
+};
+
+const cancel = () => {
+    // Réinitialiser le formulaire avant de naviguer
+    form.reset();
+    router.visit('/groups');
 };
 
 // Filtrer les années académiques et sites par université sélectionnée
@@ -186,12 +193,12 @@ const filteredSites = computed(() => {
                             </div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="form.university_id && form.academic_year_id && form.name && form.quantity && form.main_site_id"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

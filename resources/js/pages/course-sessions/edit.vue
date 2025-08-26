@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { computed, onMounted } from 'vue';
+import FormActions from '@/components/ui/FormActions.vue';
 
 interface University {
     id: number;
@@ -60,6 +61,16 @@ interface Props {
 
 const props = defineProps<Props>();
 
+// Debug: Afficher les données reçues
+console.log('Props reçues dans edit:', {
+    session: props.session,
+    universities: props.universities,
+    academicYears: props.academicYears,
+    courses: props.courses,
+    sites: props.sites,
+    rooms: props.rooms
+});
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Sessions de cours', href: '/course-sessions' },
     { title: 'Edit', href: `/course-sessions/${props.session?.id || 'unknown'}/edit` },
@@ -79,30 +90,49 @@ const form = useForm({
 const initializeForm = () => {
     if (!props.session) return;
     
+    console.log('Initialisation du formulaire avec session:', props.session);
+    
     // Initialiser tous les champs
     form.academic_year_id = props.session.academic_year_id?.toString() || '';
     form.course_id = props.session.course_id?.toString() || '';
     form.site_id = props.session.site_id?.toString() || '';
     form.room_id = props.session.room_id?.toString() || '';
     
-    // Formater les dates (enlever les millisecondes et secondes)
+    // Formater les dates pour l'input datetime-local (YYYY-MM-DDTHH:MM)
     if (props.session.start_at) {
-        form.start_at = props.session.start_at.slice(0, 16);
-    }
-    if (props.session.end_at) {
-        form.end_at = props.session.end_at.slice(0, 16);
-    }
-    
-    // Déterminer l'université à partir de l'année académique ou du cours
-    const academicYear = props.academicYears.find(year => year.id === props.session.academic_year_id);
-    if (academicYear) {
-        form.university_id = academicYear.university_id.toString();
-    } else {
-        const course = props.courses.find(c => c.id === props.session.course_id);
-        if (course) {
-            form.university_id = course.university_id.toString();
+        const startDate = new Date(props.session.start_at);
+        if (!isNaN(startDate.getTime())) {
+            form.start_at = startDate.toISOString().slice(0, 16);
+        } else {
+            console.error('Date de début invalide:', props.session.start_at);
+            form.start_at = '';
         }
     }
+    if (props.session.end_at) {
+        const endDate = new Date(props.session.end_at);
+        if (!isNaN(endDate.getTime())) {
+            form.end_at = endDate.toISOString().slice(0, 16);
+        } else {
+            console.error('Date de fin invalide:', props.session.end_at);
+            form.end_at = '';
+        }
+    }
+    
+    // Déterminer l'université à partir de l'année académique
+    const academicYear = props.academicYears.find(year => year.id === props.session.academic_year_id);
+    if (academicYear && academicYear.university_id) {
+        form.university_id = academicYear.university_id.toString();
+        console.log('Université déterminée à partir de l\'année académique:', form.university_id);
+    } else {
+        // Fallback: essayer de déterminer l'université à partir du cours
+        const course = props.courses.find(c => c.id === props.session.course_id);
+        if (course && course.university_id) {
+            form.university_id = course.university_id.toString();
+            console.log('Université déterminée à partir du cours:', form.university_id);
+        }
+    }
+    
+    console.log('Formulaire initialisé:', form.data());
 };
 
 // Initialiser au chargement
@@ -121,25 +151,67 @@ const submit = () => {
     form.put(route('course-sessions.update', props.session.id));
 };
 
+const cancel = () => {
+    // Réinitialiser le formulaire avant de naviguer
+    form.reset();
+    router.visit('/course-sessions');
+};
+
 // Filtrer les données par université sélectionnée
 const filteredAcademicYears = computed(() => {
     if (!form.university_id) return [];
-    return props.academicYears.filter(year => year.university_id.toString() === form.university_id);
+    
+    const filtered = props.academicYears.filter(year => year.university_id.toString() === form.university_id);
+    console.log('Années académiques filtrées:', {
+        university_id: form.university_id,
+        total: props.academicYears.length,
+        filtered: filtered.length,
+        data: filtered
+    });
+    
+    return filtered;
 });
 
 const filteredCourses = computed(() => {
     if (!form.university_id) return [];
-    return props.courses.filter(course => course.university_id.toString() === form.university_id);
+    
+    const filtered = props.courses.filter(course => course.university_id.toString() === form.university_id);
+    console.log('Cours filtrés:', {
+        university_id: form.university_id,
+        total: props.courses.length,
+        filtered: filtered.length,
+        data: filtered
+    });
+    
+    return filtered;
 });
 
 const filteredSites = computed(() => {
     if (!form.university_id) return [];
-    return props.sites.filter(site => site.university_id.toString() === form.university_id);
+    
+    const filtered = props.sites.filter(site => site.university_id.toString() === form.university_id);
+    console.log('Sites filtrés:', {
+        university_id: form.university_id,
+        total: props.sites.length,
+        filtered: filtered.length,
+        data: filtered
+    });
+    
+    return filtered;
 });
 
 const filteredRooms = computed(() => {
     if (!form.site_id) return [];
-    return props.rooms.filter(room => room.site_id.toString() === form.site_id);
+    
+    const filtered = props.rooms.filter(room => room.site_id.toString() === form.site_id);
+    console.log('Salles filtrées:', {
+        site_id: form.site_id,
+        total: props.rooms.length,
+        filtered: filtered.length,
+        data: filtered
+    });
+    
+    return filtered;
 });
 
 // Calculer automatiquement l'heure de fin (1h après le début)
@@ -267,12 +339,12 @@ const updateEndTime = () => {
                             </div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Enregistrement...</span>
-                                <span v-else>Enregistrer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="form.university_id && form.academic_year_id && form.course_id && form.site_id && form.room_id && form.start_at && form.end_at"
+                            submit-text="Enregistrer"
+                            @cancel="cancel"
+                        />
                     </form>
                 </CardContent>
             </Card>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { computed, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FormActions from '@/components/ui/FormActions.vue';
 
 interface University {
     id: number;
@@ -34,6 +35,18 @@ interface Props {
 
 const props = defineProps<Props>();
 
+// Debug: Afficher les données reçues
+console.log('Props reçues:', {
+    universities: props.universities,
+    academicYears: props.academicYears,
+    sites: props.sites
+});
+
+// Debug: Vérifier la structure des données
+console.log('Structure des universités:', props.universities.map(u => ({ id: u.id, name: u.name, code: u.code })));
+console.log('Structure des années académiques:', props.academicYears.map(a => ({ id: a.id, name: a.name, university_id: a.university_id })));
+console.log('Structure des sites:', props.sites.map(s => ({ id: s.id, name: s.name, university_id: s.university_id })));
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Groupes', href: '/groups' },
     { title: 'Create', href: '/groups/create' },
@@ -55,15 +68,74 @@ const submit = () => {
 
 const resetForm = () => form.reset();
 
+const cancel = () => {
+    // Empêcher la validation du formulaire et naviguer directement
+    form.clearErrors();
+    router.visit('/groups');
+};
+
 // Filtrer les années académiques et sites par université sélectionnée
 const filteredAcademicYears = computed(() => {
     if (!form.university_id) return [];
-    return props.academicYears.filter(year => year.university_id.toString() === form.university_id);
+    
+    // Convertir en array normal et forcer la comparaison des types
+    const academicYearsArray = Array.from(props.academicYears);
+    const universityId = parseInt(form.university_id);
+    
+    const filtered = academicYearsArray.filter(year => year.university_id === universityId);
+    
+    console.log('Filtering academic years:', {
+        university_id: form.university_id,
+        university_id_type: typeof form.university_id,
+        university_id_parsed: universityId,
+        academicYears: academicYearsArray,
+        academicYears_sample: academicYearsArray.slice(0, 2),
+        filtered: filtered
+    });
+    
+    return filtered;
 });
 
 const filteredSites = computed(() => {
     if (!form.university_id) return [];
-    return props.sites.filter(site => site.university_id.toString() === form.university_id);
+    
+    // Convertir en array normal et forcer la comparaison des types
+    const sitesArray = Array.from(props.sites);
+    const universityId = parseInt(form.university_id);
+    
+    const filtered = sitesArray.filter(site => site.university_id === universityId);
+    
+    console.log('Filtering sites:', {
+        university_id: form.university_id,
+        university_id_type: typeof form.university_id,
+        university_id_parsed: universityId,
+        sites: sitesArray,
+        sites_sample: sitesArray.slice(0, 2),
+        filtered: filtered
+    });
+    
+    return filtered;
+});
+
+// Watcher pour voir quand l'université change
+watch(() => form.university_id, (newValue, oldValue) => {
+    console.log('Université changée:', { oldValue, newValue });
+    console.log('Form data après changement:', form.data());
+    
+    if (newValue) {
+        console.log('Recherche des années académiques pour université:', newValue);
+        
+        // Convertir en array normal et forcer la comparaison des types
+        const academicYearsArray = Array.from(props.academicYears);
+        const universityId = parseInt(newValue);
+        const years = academicYearsArray.filter(year => year.university_id === universityId);
+        console.log('Années académiques trouvées:', years);
+        
+        console.log('Recherche des sites pour université:', newValue);
+        const sitesArray = Array.from(props.sites);
+        const sites = sitesArray.filter(site => site.university_id === universityId);
+        console.log('Sites trouvés:', sites);
+    }
 });
 </script>
 
@@ -176,13 +248,14 @@ const filteredSites = computed(() => {
                             </div>
                         </div>
 
-                        <div class="flex justify-end space-x-3">
-                            <Button type="button" variant="outline" @click="resetForm" :disabled="form.processing">Réinitialiser</Button>
-                            <Button type="submit" :disabled="form.processing">
-                                <span v-if="form.processing">Création...</span>
-                                <span v-else>Créer</span>
-                            </Button>
-                        </div>
+                        <FormActions
+                            :is-loading="form.processing"
+                            :is-valid="form.university_id && form.academic_year_id && form.name && form.quantity && form.main_site_id"
+                            submit-text="Créer"
+                            show-reset
+                            @cancel="cancel"
+                            @reset="resetForm"
+                        />
                     </form>
                 </CardContent>
             </Card>

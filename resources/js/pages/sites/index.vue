@@ -2,8 +2,10 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog.vue';
 
 interface Site {
     id: number;
@@ -25,15 +27,55 @@ interface Props {
 
 const props = defineProps<Props>();
 
+// État pour le dialogue de suppression
+const showDeleteDialog = ref(false);
+const siteToDelete = ref<Site | null>(null);
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Sites', href: '/sites' },
 ];
 
 const destroyForm = useForm({});
-const destroy = (id: number) => {
-    if (!confirm('Supprimer ce site ?')) return;
-    destroyForm.delete(route('sites.destroy', id), {
+
+// Fonction pour formater les jours actifs de manière sécurisée
+const formatActiveDays = (activeDays: any): string => {
+    if (!activeDays) return 'Aucun jour défini';
+    
+    // Si c'est une chaîne JSON, essayer de la parser
+    if (typeof activeDays === 'string') {
+        try {
+            const parsed = JSON.parse(activeDays);
+            if (Array.isArray(parsed)) {
+                return parsed.join(', ');
+            }
+        } catch (e) {
+            console.warn('Impossible de parser active_days:', activeDays);
+        }
+        return activeDays;
+    }
+    
+    // Si c'est un tableau, l'utiliser directement
+    if (Array.isArray(activeDays)) {
+        return activeDays.join(', ');
+    }
+    
+    return String(activeDays);
+};
+
+const openDeleteDialog = (site: Site) => {
+    siteToDelete.value = site;
+    showDeleteDialog.value = true;
+};
+
+const confirmDelete = () => {
+    if (!siteToDelete.value) return;
+    
+    destroyForm.delete(route('sites.destroy', siteToDelete.value.id), {
         preserveScroll: true,
+        onSuccess: () => {
+            showDeleteDialog.value = false;
+            siteToDelete.value = null;
+        },
     });
 };
 </script>
@@ -70,7 +112,7 @@ const destroy = (id: number) => {
                                 <strong>Horaires:</strong> {{ site.day_start }} - {{ site.day_end }}
                             </p>
                             <p class="text-sm text-gray-600">
-                                <strong>Jours actifs:</strong> {{ site.active_days.join(', ') }}
+                                <strong>Jours actifs:</strong> {{ formatActiveDays(site.active_days) }}
                             </p>
                         </div>
                         <div class="flex justify-between items-center">
@@ -79,7 +121,7 @@ const destroy = (id: number) => {
                                 <Link :href="route('sites.edit', site.id)">
                                     <Button variant="outline">Modifier</Button>
                                 </Link>
-                                <Button variant="destructive" @click="destroy(site.id)" :disabled="destroyForm.processing">
+                                <Button variant="destructive" @click="openDeleteDialog(site)" :disabled="destroyForm.processing">
                                     Supprimer
                                 </Button>
                             </div>
@@ -95,5 +137,14 @@ const destroy = (id: number) => {
                 </Link>
             </div>
         </div>
+        
+        <!-- Dialogue de confirmation de suppression -->
+        <ConfirmDeleteDialog
+            :open="showDeleteDialog"
+            :item-name="siteToDelete?.name || ''"
+            :is-loading="destroyForm.processing"
+            @update:open="showDeleteDialog = $event"
+            @confirm="confirmDelete"
+        />
     </AppLayout>
 </template>

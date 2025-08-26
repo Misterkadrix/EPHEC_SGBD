@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProductController;
+
 use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\RoomController;
@@ -48,11 +48,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth','verified'])->group(function(){
-    // Routes pour les produits
-    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
-    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-    
+
     // Routes pour le tableau de bord
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/stats', [DashboardController::class, 'stats'])->name('stats');

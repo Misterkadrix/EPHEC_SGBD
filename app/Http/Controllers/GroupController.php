@@ -33,6 +33,16 @@ class GroupController extends Controller
         $academicYears = AcademicYear::all();
         $sites = Site::with('university')->get();
         
+        // Debug: Log des données envoyées
+        \Log::info('GroupController::create - Données envoyées', [
+            'universities_count' => $universities->count(),
+            'academic_years_count' => $academicYears->count(),
+            'sites_count' => $sites->count(),
+            'universities' => $universities->toArray(),
+            'academic_years' => $academicYears->toArray(),
+            'sites' => $sites->toArray(),
+        ]);
+        
         return Inertia::render('groups/create', [
             'universities' => $universities,
             'academicYears' => $academicYears,

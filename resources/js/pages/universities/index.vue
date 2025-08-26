@@ -4,6 +4,8 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog.vue';
+import { ref } from 'vue';
 
 interface University {
     id: number;
@@ -22,11 +24,25 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Universities', href: '/universities' },
 ];
 
+// État pour la suppression
+const showDeleteDialog = ref(false);
+const universityToDelete = ref<University | null>(null);
 const destroyForm = useForm({});
-const destroy = (id: number) => {
-    if (!confirm('Supprimer cette université ?')) return;
-    destroyForm.delete(route('universities.destroy', id), {
+
+const openDeleteDialog = (university: University) => {
+    universityToDelete.value = university;
+    showDeleteDialog.value = true;
+};
+
+const confirmDelete = () => {
+    if (!universityToDelete.value) return;
+    
+    destroyForm.delete(route('universities.destroy', universityToDelete.value.id), {
         preserveScroll: true,
+        onSuccess: () => {
+            showDeleteDialog.value = false;
+            universityToDelete.value = null;
+        },
     });
 };
 </script>
@@ -58,7 +74,7 @@ const destroy = (id: number) => {
                                 <Link :href="route('universities.edit', u.id)">
                                     <Button variant="outline">Modifier</Button>
                                 </Link>
-                                <Button variant="destructive" @click="destroy(u.id)" :disabled="destroyForm.processing">
+                                <Button variant="destructive" @click="openDeleteDialog(u)" :disabled="destroyForm.processing">
                                     Supprimer
                                 </Button>
                             </div>
@@ -74,5 +90,14 @@ const destroy = (id: number) => {
                 </Link>
             </div>
         </div>
+        
+        <!-- Dialogue de confirmation de suppression -->
+        <ConfirmDeleteDialog
+            :open="showDeleteDialog"
+            :item-name="universityToDelete?.name || ''"
+            :is-loading="destroyForm.processing"
+            @update:open="showDeleteDialog = $event"
+            @confirm="confirmDelete"
+        />
     </AppLayout>
 </template>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog.vue';
+import { ref } from 'vue';
 
 interface Equipment {
     id: number;
@@ -31,9 +33,31 @@ interface Props {
 const props = defineProps<Props>();
 const page = usePage();
 
+// État pour la suppression
+const showDeleteDialog = ref(false);
+const equipmentToDelete = ref<Equipment | null>(null);
+const deleteForm = useForm({});
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Équipements', href: '/equipment' },
 ];
+
+const openDeleteDialog = (equipment: Equipment) => {
+    equipmentToDelete.value = equipment;
+    showDeleteDialog.value = true;
+};
+
+const confirmDelete = () => {
+    if (!equipmentToDelete.value) return;
+    
+    deleteForm.delete(route('equipment.destroy', equipmentToDelete.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDeleteDialog.value = false;
+            equipmentToDelete.value = null;
+        },
+    });
+};
 </script>
 
 <template>
@@ -86,7 +110,12 @@ const breadcrumbs: BreadcrumbItem[] = [
                                 <Link :href="route('equipment.edit', item.id)">
                                     <Button variant="outline" size="sm">Modifier</Button>
                                 </Link>
-                                <Button variant="outline" size="sm" class="text-red-600 hover:text-red-700">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    class="text-red-600 hover:text-red-700"
+                                    @click="openDeleteDialog(item)"
+                                >
                                     Supprimer
                                 </Button>
                             </div>
@@ -105,5 +134,14 @@ const breadcrumbs: BreadcrumbItem[] = [
                 </Link>
             </div>
         </div>
+        
+        <!-- Dialogue de confirmation de suppression -->
+        <ConfirmDeleteDialog
+            :open="showDeleteDialog"
+            :item-name="equipmentToDelete?.type?.label || ''"
+            :is-loading="deleteForm.processing"
+            @update:open="showDeleteDialog = $event"
+            @confirm="confirmDelete"
+        />
     </AppLayout>
 </template>

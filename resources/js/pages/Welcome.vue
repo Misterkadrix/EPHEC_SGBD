@@ -29,119 +29,59 @@ defineProps<{
 
         <div class="max-w-7xl mx-auto p-6 lg:p-8">
             <div class="flex justify-center">
-                <svg viewBox="0 0 62 10" xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 dark:hidden">
-                    <path d="M6.5 0c-.8 0-1.5.7-1.5 1.5v7C5 9.3 5.7 10 6.5 10h49c.8 0 1.5-.7 1.5-1.5v-7C57 .7 56.3 0 55.5 0h-49zM6 1.5c0-.3.2-.5.5-.5h49c.3 0 .5.2.5.5v7c0 .3-.2.5-.5.5h-49c-.3 0-.5-.2-.5-.5v-7zM16 3h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3z" fill="#F59E0B"/>
-                    <path d="M0 3h4v4H0V3zm6 0h4v4H6V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3z" fill="#EF4444"/>
-                </svg>
-                <svg viewBox="0 0 62 10" xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 hidden dark:block">
-                    <path d="M6.5 0c-.8 0-1.5.7-1.5 1.5v7C5 9.3 5.7 10 6.5 10h49c.8 0 1.5-.7 1.5-1.5v-7C57 .7 56.3 0 55.5 0h-49zM6 1.5c0-.3.2-.5.5-.5h49c.3 0 .5.2.5.5v7c0 .3-.2.5-.5.5h-49c-.3 0-.5-.2-.5-.5v-7zM16 3h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3z" fill="#F59E0B"/>
-                    <path d="M0 3h4v4H0V3zm6 0h4v4H6V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3zm6 0h4v4h-4V3z" fill="#EF4444"/>
-                </svg>
+                <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 text-white">
+                        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                </div>
             </div>
 
             <div class="mt-16">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                    <div class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-black/80 flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-8 h-8 stroke-gray-800 dark:stroke-white"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                                <h2 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">
-                                    <a href="https://github.com/spatie/laravel-ignition" class="rounded-lg focus:outline focus:outline-2 focus:outline-red-500 focus:outline-offset-2">
-                                        Ignition
-                                    </a>
-                                </h2>
+                <div class="text-center">
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                        SGBD_KAD
+                    </h1>
+                    <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">
+                        Système de Gestion de Base de Données pour la planification universitaire
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                        <div class="p-6 bg-white dark:bg-gray-800/50 dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-xl">
+                            <div class="text-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-12 h-12 stroke-blue-600 mx-auto mb-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.414M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Gestion des Universités</h3>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Administration complète des établissements universitaires</p>
                             </div>
+                        </div>
 
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel Ignition is a beautiful error page for Laravel applications. You can open this template in
-                                <code class="bg-gray-800/50 rounded px-1 py-0.5 text-white dark:text-white">resources/views/ignition-error.blade.php</code>
-                                to customize it.
-                            </p>
+                        <div class="p-6 bg-white dark:bg-gray-800/50 dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-xl">
+                            <div class="text-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-12 h-12 stroke-green-600 mx-auto mb-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                                </svg>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Planification des Cours</h3>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Organisation et gestion des sessions de cours</p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white dark:bg-gray-800/50 dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-xl">
+                            <div class="text-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-12 h-12 stroke-purple-600 mx-auto mb-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                                </svg>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Gestion des Groupes</h3>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Administration des groupes d'étudiants</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-black/80 flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-8 h-8 stroke-gray-800 dark:stroke-white"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                                <h2 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">
-                                    <a href="https://github.com/spatie/laravel-ignition" class="rounded-lg focus:outline focus:outline-2 focus:outline-red-500 focus:outline-offset-2">
-                                        Ignition
-                                    </a>
-                                </h2>
-                            </div>
-
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel Ignition is a beautiful error page for Laravel applications. You can open this template in
-                                <code class="bg-gray-800/50 rounded px-1 py-0.5 text-white dark:text-white">resources/views/ignition-error.blade.php</code>
-                                to customize it.
-                            </p>
-                        </div>
+                    <div class="mt-12 text-center">
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">
+                            Développé avec Laravel {{ laravelVersion }} et PHP {{ phpVersion }}
+                        </p>
                     </div>
-
-                    <div class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-black/80 flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-8 h-8 stroke-gray-800 dark:stroke-white"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                                <h2 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">
-                                    <a href="https://github.com/spatie/laravel-ignition" class="rounded-lg focus:outline focus:outline-2 focus:outline-red-500 focus:outline-offset-2">
-                                        Ignition
-                                    </a>
-                                </h2>
-                            </div>
-
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel Ignition is a beautiful error page for Laravel applications. You can open this template in
-                                <code class="bg-gray-800/50 rounded px-1 py-0.5 text-white dark:text-white">resources/views/ignition-error.blade.php</code>
-                                to customize it.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-black/80 flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                        <div>
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-8 h-8 stroke-gray-800 dark:stroke-white"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                                <h2 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">
-                                    <a href="https://github.com/spatie/laravel-ignition" class="rounded-lg focus:outline focus:outline-2 focus:outline-red-500 focus:outline-offset-2">
-                                        Ignition
-                                    </a>
-                                </h2>
-                            </div>
-
-                            <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                Laravel Ignition is a beautiful error page for Laravel applications. You can open this template in
-                                <code class="bg-gray-800/50 rounded px-1 py-0.5 text-white dark:text-white">resources/views/ignition-error.blade.php</code>
-                                to customize it.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-center mt-16 px-6 sm:items-center sm:justify-between">
-                <div class="text-center text-sm text-gray-500 dark:text-gray-400 sm:text-start">
-                    <div class="flex items-center gap-4">
-                        <a href="https://github.com/spatie/laravel-ignition" class="group inline-flex items-center hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="-mt-px mr-1 w-5 h-5 stroke-gray-400 dark:stroke-gray-600 group-hover:stroke-gray-600 dark:group-hover:stroke-gray-400">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                            </svg>
-                            Laravel
-                        </a>
-
-                        <div class="border-l border-gray-200 dark:border-gray-700 mx-4 h-4"></div>
-
-                        <a href="https://github.com/spatie/laravel-ignition" class="group inline-flex items-center hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="-mt-px mr-1 w-5 h-5 stroke-gray-400 dark:stroke-gray-600 group-hover:stroke-gray-600 dark:group-hover:stroke-gray-400">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                            </svg>
-                            Laravel
-                        </a>
-                    </div>
-                </div>
-
-                <div class="ml-4 text-center text-sm text-gray-500 dark:text-gray-400 sm:text-right sm:ml-0">
-                    Laravel v{{ laravelVersion }} (PHP v{{ phpVersion }})
                 </div>
             </div>
         </div>

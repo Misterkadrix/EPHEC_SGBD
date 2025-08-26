@@ -60,12 +60,59 @@ class DashboardController extends Controller
             'sessionGroups.group'
         ])
         ->where('start_at', '>', now())
-        ->orderBy('start_at')
         ->limit(5)
         ->get();
 
         // Universités avec leurs sites
         $universities = University::with(['sites', 'courses', 'academicYears'])->get();
+
+        // Données pour le calendrier
+        try {
+            $calendarData = [
+                'universities' => University::select('id', 'name', 'code')->get(),
+                'groups' => Group::with('university')->get(),
+                'sessions' => CourseSession::with([
+                    'course.university',
+                    'room',
+                    'sessionGroups.group.university'
+                ])
+                ->get()
+                ->map(function ($session) {
+                    return [
+                        'id' => $session->id,
+                        'start_at' => $session->start_at,
+                        'end_at' => $session->end_at,
+                        'course' => [
+                            'id' => $session->course->id,
+                            'title' => $session->course->title,
+                            'code' => $session->course->code,
+                            'university_id' => $session->course->university_id,
+                        ],
+                        'room' => [
+                            'id' => $session->room->id,
+                            'name' => $session->room->name,
+                        ],
+                        'groups' => $session->sessionGroups->map(function ($sessionGroup) {
+                            return [
+                                'id' => $sessionGroup->group->id,
+                                'name' => $sessionGroup->group->name,
+                                'quantity' => $sessionGroup->group->quantity,
+                                'university_id' => $sessionGroup->group->university_id,
+                            ];
+                        })->toArray(),
+                    ];
+                }),
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Erreur dans DashboardController: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            $calendarData = [
+                'universities' => [],
+                'groups' => [],
+                'sessions' => [],
+            ];
+        }
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
@@ -73,6 +120,7 @@ class DashboardController extends Controller
             'todaySessions' => $todaySessions,
             'upcomingSessions' => $upcomingSessions,
             'universities' => $universities,
+            'calendarData' => $calendarData,
         ]);
     }
 

@@ -171,23 +171,56 @@ class SiteController extends Controller
     public function destroy(Site $site)
     {
         try {
-            // Vérifier s'il y a des relations
-            if ($site->rooms()->count() > 0) {
-                return back()->withErrors(['error' => 'Impossible de supprimer ce site car il possède des salles']);
+            // Supprimer en cascade les entités liées
+            $deletedCounts = [];
+            
+            // Supprimer les sessions de cours liées
+            $sessionsCount = $site->courseSessions()->count();
+            if ($sessionsCount > 0) {
+                // Supprimer d'abord les relations session-groupe et session-équipement
+                $site->courseSessions()->each(function ($session) {
+                    $session->sessionGroups()->delete();
+                    $session->sessionEquipment()->delete();
+                });
+                $site->courseSessions()->delete();
+                $deletedCounts[] = "{$sessionsCount} session(s) de cours";
             }
             
-            if ($site->equipment()->count() > 0) {
-                return back()->withErrors(['error' => 'Impossible de supprimer ce site car il possède des équipements']);
+            // Supprimer les équipements liés
+            $equipmentCount = $site->equipment()->count();
+            if ($equipmentCount > 0) {
+                $site->equipment()->delete();
+                $deletedCounts[] = "{$equipmentCount} équipement(s)";
             }
             
-            if ($site->courseSessions()->count() > 0) {
-                return back()->withErrors(['error' => 'Impossible de supprimer ce site car il possède des sessions']);
+            // Supprimer les salles liées
+            $roomsCount = $site->rooms()->count();
+            if ($roomsCount > 0) {
+                $site->rooms()->delete();
+                $deletedCounts[] = "{$roomsCount} salle(s)";
             }
-
+            
+            // Supprimer les groupes liés (qui ont ce site comme site principal)
+            $groupsCount = $site->groups()->count();
+            if ($groupsCount > 0) {
+                // Supprimer d'abord les relations session-groupe
+                $site->groups()->each(function ($group) {
+                    $group->sessionGroups()->delete();
+                });
+                $site->groups()->delete();
+                $deletedCounts[] = "{$groupsCount} groupe(s)";
+            }
+            
+            // Maintenant supprimer le site
             $site->delete();
+            
+            $message = 'Site supprimé avec succès !';
+            if (!empty($deletedCounts)) {
+                $message .= ' Éléments supprimés en cascade : ' . implode(', ', $deletedCounts);
+            }
 
             return redirect()->route('sites.index')
-                ->with('success', 'Site supprimé avec succès !');
+                ->with('success', $message);
                 
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Erreur lors de la suppression du site: ' . $e->getMessage()]);
