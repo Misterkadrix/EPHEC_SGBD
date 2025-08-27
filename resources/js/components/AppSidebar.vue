@@ -6,17 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { 
-    BookOpen, 
-    LayoutGrid, 
-    Building2, 
-    MapPin, 
-    Users, 
-    Calendar, 
-    GraduationCap, 
-    Wrench, 
-    Package, 
-    Clock,
-    Home
+    BookOpen, LayoutGrid, Building2, MapPin, Users, Calendar, GraduationCap, Wrench, Package, Clock, Home, Rocket, Route
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -70,6 +60,16 @@ const mainNavItems: NavItem[] = [
         title: 'Sessions de cours',
         href: '/course-sessions',
         icon: Clock,
+    },
+    {
+        title: 'Planification automatique',
+        href: '/planning',
+        icon: Rocket,
+    },
+    {
+        title: 'Déplacements',
+        href: '/deplacements',
+        icon: Route,
     },
     {
         title: 'Fériés',

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Group extends Model
 {
@@ -45,5 +46,14 @@ class Group extends Model
     public function sessionGroups(): HasMany
     {
         return $this->hasMany(SessionGroup::class);
+    }
+
+    /**
+     * Les cours associés à ce groupe
+     */
+    public function courses(): BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'group_course')
+                    ->withTimestamps();
     }
 }

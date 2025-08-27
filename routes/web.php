@@ -13,6 +13,8 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\CourseSessionController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\DeplacementController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -82,6 +84,16 @@ Route::middleware(['auth','verified'])->group(function(){
     
     // Routes pour les fériés
     Route::resource('holidays', HolidayController::class);
+    
+    // Routes pour la planification automatique
+    Route::get('/planning', [PlanningController::class, 'index'])->name('planning.index');
+    Route::post('/planning/generate-schedule', [PlanningController::class, 'generateSchedule'])->name('planning.generate-schedule');
+    Route::get('/planning/stats', [PlanningController::class, 'stats'])->name('planning.stats');
+    
+    // Routes pour les déplacements
+    Route::get('/deplacements', [DeplacementController::class, 'index'])->name('deplacements.index');
+    Route::get('/deplacements/{deplacement}', [DeplacementController::class, 'show'])->name('deplacements.show');
+    Route::post('/deplacements/generate', [DeplacementController::class, 'generateAll'])->name('deplacements.generate');
 });
 
 require __DIR__.'/auth.php';

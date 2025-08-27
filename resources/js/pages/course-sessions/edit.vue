@@ -242,6 +242,21 @@ watch(() => props.session, (newSession) => {
 }, { immediate: true });
 
 const submit = () => {
+    // Convertir le format de date pour correspondre au backend
+    if (form.start_at) {
+        const startDate = new Date(form.start_at);
+        form.start_at = startDate.toISOString().slice(0, 19).replace('T', ' ');
+    }
+    if (form.end_at) {
+        const endDate = new Date(form.end_at);
+        form.end_at = endDate.toISOString().slice(0, 19).replace('T', ' ');
+    }
+    
+    console.log('Dates formatées pour envoi:', {
+        start_at: form.start_at,
+        end_at: form.end_at
+    });
+    
     form.put(route('course-sessions.update', props.session.id));
 };
 

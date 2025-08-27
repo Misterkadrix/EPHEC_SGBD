@@ -40,15 +40,16 @@ class DatabaseSeeder extends Seeder
             AcademicYearSeeder::class,
             GroupSeeder::class,
             
-            // 5. Sessions et réservations
-            SessionSeeder::class,
-            SessionGroupSeeder::class,
-            SessionEquipmentSeeder::class,
+            // 5. Associations et permissions
+            GroupCourseSeeder::class,
             
             // 6. Fériés
             HolidaySeeder::class,
             
-            // 7. Ancien seeder de produits (à supprimer plus tard)
+            // 7. Déplacements
+            DeplacementSeeder::class,
+            
+            // 8. Ancien seeder de produits (à supprimer plus tard)
             ProductSeeder::class,
         ]);
     }
