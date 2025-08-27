@@ -82,14 +82,11 @@
           <!-- Sessions du jour -->
           <div v-if="day.sessions.length > 0" class="day-sessions">
             <div v-for="session in day.sessions.slice(0, 3)" :key="session.id" class="session-item"
-              :title="`${session.course.title} - ${session.start_at} (${session.room.name})`">
-              <div class="session-time">{{ session.start_at }}</div>
+              @click="openSessionModal(session)"
+              :title="`${session.course.title} - ${formatSessionTime(session.start_at, session.end_at)} (${session.room.name})`">
+              <div class="session-time">{{ formatSessionTime(session.start_at, session.end_at) }}</div>
               <div class="session-course">{{ session.course.title }}</div>
               <div class="session-room">{{ session.room.name }}</div>
-            </div>
-
-            <div v-if="day.sessions.length > 3" class="more-sessions">
-              +{{ day.sessions.length - 3 }} autres
             </div>
           </div>
         </div>
@@ -179,6 +176,43 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal détaillée du cours -->
+  <div v-if="isSessionModalOpen" class="session-modal-overlay" @click="closeSessionModal">
+    <div class="session-modal" @click.stop>
+      <div class="session-modal-header">
+        <h3 class="session-modal-title">{{ selectedSession?.course.title }}</h3>
+        <button @click="closeSessionModal" class="session-modal-close">×</button>
+      </div>
+
+      <div class="session-modal-content">
+        <div class="session-detail-item">
+          <span class="detail-label">📅 Date :</span>
+          <span class="detail-value">{{ formatSessionDate(selectedSession?.start_at) }}</span>
+        </div>
+
+        <div class="session-detail-item">
+          <span class="detail-label">🕐 Horaire :</span>
+          <span class="detail-value">{{ formatSessionTime(selectedSession?.start_at, selectedSession?.end_at) }}</span>
+        </div>
+
+        <div class="session-detail-item">
+          <span class="detail-label">🚪 Salle :</span>
+          <span class="detail-value">{{ selectedSession?.room.name }}</span>
+        </div>
+
+        <div class="session-detail-item">
+          <span class="detail-label">📚 Cours :</span>
+          <span class="detail-value">{{ selectedSession?.course.title }} ({{ selectedSession?.course.code }})</span>
+        </div>
+
+        <div class="session-detail-item">
+          <span class="detail-label">👥 Groupes :</span>
+          <span class="detail-value">{{ selectedSession?.groups.map(g => g.name).join(', ') }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -216,6 +250,10 @@ interface Session {
   course: Course;
   room: Room;
   groups: Group[];
+  site?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface CalendarDay {
@@ -413,7 +451,8 @@ const createCalendarDay = (date: Date, isCurrentMonth: boolean): CalendarDay => 
       start_time: new Date(session.start_at).toLocaleTimeString('fr-FR', {
         hour: '2-digit',
         minute: '2-digit'
-      })
+      }),
+      site: session.site || null
     }))
   };
 };
@@ -448,6 +487,20 @@ const onViewChange = () => {
   console.log('Vue sélectionnée:', selectedView.value);
 };
 
+const openSessionModal = (session: Session) => {
+  selectedSession.value = session;
+  isSessionModalOpen.value = true;
+};
+
+const closeSessionModal = () => {
+  selectedSession.value = null;
+  isSessionModalOpen.value = false;
+};
+
+const selectedSession = ref<Session | null>(null);
+const isSessionModalOpen = ref(false);
+
+
 const getDaySessions = (day: string) => {
   return filteredSessions.value.filter(session => {
     const sessionDate = new Date(session.start_at);
@@ -457,11 +510,36 @@ const getDaySessions = (day: string) => {
 };
 
 const formatTime = (time: string) => {
-  const date = new Date(time);
-  return date.toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const match = time.match(/T(\d{2}):(\d{2}):/);
+  if (match) {
+    const hour = match[1];
+    const minute = match[2];
+    return `${hour}:${minute}`;
+  }
+  return 'Heure non disponible';
+};
+
+const formatSessionTime = (start: string, end: string) => {
+  // Extraire directement les heures et minutes des chaînes ISO
+  const startMatch = start.match(/T(\d{2}):(\d{2}):/);
+  const endMatch = end.match(/T(\d{2}):(\d{2}):/);
+  
+  if (startMatch && endMatch) {
+    const startHour = startMatch[1];
+    const startMinute = startMatch[2];
+    const endHour = endMatch[1];
+    const endMinute = endMatch[2];
+    
+    return `${startHour}:${startMinute} - ${endHour}:${endMinute}`;
+  }
+  
+  // Fallback si le parsing échoue
+  return 'Heure non disponible';
+};
+
+const formatSessionDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', { month: 'numeric', day: 'numeric' });
 };
 
 const getWeekDays = () => {
@@ -1008,5 +1086,85 @@ const getCurrentDayDate = () => {
   .session-room {
     display: none;
   }
+}
+
+.session-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.session-modal {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.session-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.session-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.session-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.session-modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.session-modal-content {
+  padding: 24px;
+}
+
+.session-detail-item {
+  display: flex;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #374151;
+  min-width: 120px;
+  margin-right: 12px;
+}
+
+.detail-value {
+  color: #111827;
+  flex: 1;
 }
 </style>
