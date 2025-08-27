@@ -68,18 +68,31 @@ class DashboardController extends Controller
 
         // Données pour le calendrier
         try {
+            // Récupérer les sessions avec leurs relations
+            $sessions = CourseSession::with([
+                'course.university',
+                'room.site.university',
+                'sessionGroups.group.university'
+            ])->get();
+
+            // Récupérer les déplacements avec leurs relations
+            $deplacements = \App\Models\Deplacement::with([
+                'group.university',
+                'sessionDepart.course.university',
+                'sessionDepart.site.university',
+                'sessionDepart.room.site.university',
+                'sessionArrivee.course.university',
+                'sessionArrivee.site.university',
+                'sessionArrivee.room.site.university'
+            ])->get();
+
             $calendarData = [
                 'universities' => University::select('id', 'name', 'code')->get(),
                 'groups' => Group::with('university')->get(),
-                'sessions' => CourseSession::with([
-                    'course.university',
-                    'room',
-                    'sessionGroups.group.university'
-                ])
-                ->get()
-                ->map(function ($session) {
+                'sessions' => $sessions->map(function ($session) {
                     return [
                         'id' => $session->id,
+                        'type' => 'session',
                         'start_at' => $session->start_at,
                         'end_at' => $session->end_at,
                         'course' => [
@@ -92,6 +105,10 @@ class DashboardController extends Controller
                             'id' => $session->room->id,
                             'name' => $session->room->name,
                         ],
+                        'site' => [
+                            'id' => $session->room->site->id ?? null,
+                            'name' => $session->room->site->name ?? null,
+                        ],
                         'groups' => $session->sessionGroups->map(function ($sessionGroup) {
                             return [
                                 'id' => $sessionGroup->group->id,
@@ -100,6 +117,50 @@ class DashboardController extends Controller
                                 'university_id' => $sessionGroup->group->university_id,
                             ];
                         })->toArray(),
+                    ];
+                }),
+                'deplacements' => $deplacements->map(function ($deplacement) {
+                    return [
+                        'id' => $deplacement->id,
+                        'type' => 'deplacement',
+                        'start_at' => $deplacement->heure_depart,
+                        'end_at' => $deplacement->heure_arrivee,
+                        'duree_trajet_minutes' => $deplacement->duree_trajet_minutes,
+                        'group' => [
+                            'id' => $deplacement->group->id,
+                            'name' => $deplacement->group->name,
+                            'university_id' => $deplacement->group->university_id,
+                        ],
+                        'depart' => [
+                            'course' => [
+                                'id' => $deplacement->sessionDepart->course->id ?? null,
+                                'title' => $deplacement->sessionDepart->course->title ?? null,
+                                'code' => $deplacement->sessionDepart->course->code ?? null,
+                            ],
+                            'site' => [
+                                'id' => $deplacement->sessionDepart->site->id ?? null,
+                                'name' => $deplacement->sessionDepart->site->name ?? null,
+                            ],
+                            'room' => [
+                                'id' => $deplacement->sessionDepart->room->id ?? null,
+                                'name' => $deplacement->sessionDepart->room->name ?? null,
+                            ],
+                        ],
+                        'arrivee' => [
+                            'course' => [
+                                'id' => $deplacement->sessionArrivee->course->id ?? null,
+                                'title' => $deplacement->sessionArrivee->course->title ?? null,
+                                'code' => $deplacement->sessionArrivee->course->code ?? null,
+                            ],
+                            'site' => [
+                                'id' => $deplacement->sessionArrivee->site->id ?? null,
+                                'name' => $deplacement->sessionArrivee->site->name ?? null,
+                            ],
+                            'room' => [
+                                'id' => $deplacement->sessionArrivee->room->id ?? null,
+                                'name' => $deplacement->sessionArrivee->room->name ?? null,
+                            ],
+                        ],
                     ];
                 }),
             ];

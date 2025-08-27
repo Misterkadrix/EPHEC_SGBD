@@ -26,46 +26,26 @@ class DeplacementController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Deplacement::with([
+        $deplacements = Deplacement::with([
             'group',
             'sessionDepart.course',
             'sessionDepart.site',
             'sessionDepart.room',
             'sessionArrivee.course',
             'sessionArrivee.site',
-            'sessionArrivee.room',
-            'siteDepart',
-            'siteArrivee',
-            'roomDepart',
-            'roomArrivee'
-        ]);
-
-        // Filtres
-        if ($request->filled('date')) {
-            $query->forDate($request->date);
-        }
-
-        if ($request->filled('group_id')) {
-            $query->forGroup($request->group_id);
-        }
-
-        if ($request->filled('inter_site') && $request->inter_site) {
-            $query->interSite();
-        }
-
-        $deplacements = $query->orderBy('heure_depart', 'asc')->paginate(20);
+            'sessionArrivee.room'
+        ])->orderBy('heure_depart', 'asc')->paginate(20);
 
         // Statistiques
         $stats = [
             'total' => Deplacement::count(),
-            'inter_site' => Deplacement::interSite()->count(),
-            'aujourd_hui' => Deplacement::forDate(Carbon::today())->count(),
+            'inter_site' => Deplacement::where('site_depart_id', '!=', 'site_arrivee_id')->count(),
+            'aujourd_hui' => Deplacement::whereDate('heure_depart', Carbon::today())->count(),
         ];
 
         return Inertia::render('deplacements/index', [
             'deplacements' => $deplacements,
-            'stats' => $stats,
-            'filters' => $request->only(['date', 'group_id', 'inter_site'])
+            'stats' => $stats
         ]);
     }
 
@@ -74,61 +54,70 @@ class DeplacementController extends Controller
      */
     public function show(Deplacement $deplacement)
     {
-        Log::info('DeplacementController: Début de show', ['deplacement_id' => $deplacement->id]);
-        
-        // Charger tout en une seule requête
         $deplacement = Deplacement::with([
             'group',
-            'siteDepart',
-            'siteArrivee',
-            'roomDepart',
-            'roomArrivee'
+            'sessionDepart.course',
+            'sessionDepart.site',
+            'sessionDepart.room',
+            'sessionArrivee.course',
+            'sessionArrivee.site',
+            'sessionArrivee.room'
         ])->find($deplacement->id);
-
-        // Charger les sites et salles si ils ne sont pas chargés
-        if (!$deplacement->siteDepart && $deplacement->site_depart_id) {
-            $deplacement->siteDepart = \App\Models\Site::find($deplacement->site_depart_id);
-        }
-        
-        if (!$deplacement->siteArrivee && $deplacement->site_arrivee_id) {
-            $deplacement->siteArrivee = \App\Models\Site::find($deplacement->site_arrivee_id);
-        }
-        
-        if (!$deplacement->roomDepart && $deplacement->room_depart_id) {
-            $deplacement->roomDepart = \App\Models\Room::find($deplacement->room_depart_id);
-        }
-        
-        if (!$deplacement->roomArrivee && $deplacement->room_arrivee_id) {
-            $deplacement->roomArrivee = \App\Models\Room::find($deplacement->room_arrivee_id);
-        }
-
-        // Charger les sessions avec leurs relations
-        if ($deplacement->session_depart_id) {
-            $deplacement->sessionDepart = CourseSession::with(['course', 'site', 'room'])
-                ->find($deplacement->session_depart_id);
-        }
-        
-        if ($deplacement->session_arrivee_id) {
-            $deplacement->sessionArrivee = CourseSession::with(['course', 'site', 'room'])
-                ->find($deplacement->session_arrivee_id);
-        }
-
-        // Debug des relations chargées
-        Log::info('DeplacementController: Relations chargées', [
-            'deplacement_id' => $deplacement->id,
-            'sessionDepart_loaded' => $deplacement->sessionDepart ? 'OUI' : 'NON',
-            'sessionArrivee_loaded' => $deplacement->sessionArrivee ? 'OUI' : 'NON',
-            'sessionDepart_course' => $deplacement->sessionDepart && $deplacement->sessionDepart->course ? 'OUI' : 'NON',
-            'sessionDepart_site' => $deplacement->sessionDepart && $deplacement->sessionDepart->site ? 'OUI' : 'NON',
-            'sessionDepart_room' => $deplacement->sessionDepart && $deplacement->sessionDepart->room ? 'OUI' : 'NON',
-        ]);
 
         return Inertia::render('deplacements/show', [
             'deplacement' => $deplacement
         ]);
     }
 
+    /**
+     * Générer tous les déplacements
+     */
+    public function generateAll()
+    {
+        try {
+            // Supprimer tous les déplacements existants
+            Deplacement::truncate();
 
+            // Récupérer toutes les sessions avec leurs relations
+            $sessions = CourseSession::with([
+                'sessionGroups.group',
+                'course',
+                'site',
+                'room'
+            ])->orderBy('start_at')->get();
+
+            $deplacementsCrees = 0;
+            $deplacementsInterSite = 0;
+
+            // Parcourir toutes les sessions
+            foreach ($sessions as $session) {
+                // Trouver la session suivante pour le même groupe le même jour
+                $nextSession = $this->findNextSessionForGroup($session);
+                
+                if ($nextSession && $this->shouldCreateDeplacement($session, $nextSession)) {
+                    $deplacement = $this->createDeplacement($session, $nextSession);
+                    
+                    if ($deplacement) {
+                        $deplacementsCrees++;
+                        
+                        // Vérifier si c'est un déplacement inter-site
+                        if ($session->site_id !== $nextSession->site_id) {
+                            $deplacementsInterSite++;
+                        }
+                    }
+                }
+            }
+
+            return redirect()->route('deplacements.index')->with('success', 
+                "{$deplacementsCrees} déplacements générés ({$deplacementsInterSite} inter-sites)"
+            );
+
+        } catch (\Exception $e) {
+            return redirect()->route('deplacements.index')->with('error', 
+                'Erreur lors de la génération: ' . $e->getMessage()
+            );
+        }
+    }
 
     /**
      * Trouver la session suivante pour le même groupe le même jour
@@ -172,66 +161,6 @@ class DeplacementController extends Controller
     }
 
     /**
-     * Générer tous les déplacements (endpoint public)
-     */
-    public function generateAll()
-    {
-        try {
-            Log::info('DeplacementController: Début de génération des déplacements');
-
-            // Récupérer toutes les sessions avec leurs relations
-            $sessions = CourseSession::with([
-                'sessionGroups.group',
-                'course',
-                'site',
-                'room'
-            ])->orderBy('start_at')->get();
-
-            $deplacementsCrees = 0;
-            $deplacementsInterSite = 0;
-
-            // Parcourir toutes les sessions
-            foreach ($sessions as $session) {
-                // Trouver la session suivante pour le même groupe le même jour
-                $nextSession = $this->findNextSessionForGroup($session);
-                
-                if ($nextSession && $this->shouldCreateDeplacement($session, $nextSession)) {
-                    $deplacement = $this->createDeplacement($session, $nextSession);
-                    
-                    if ($deplacement) {
-                        $deplacementsCrees++;
-                        
-                        // Vérifier si c'est un déplacement inter-site
-                        if ($session->site_id !== $nextSession->site_id) {
-                            $deplacementsInterSite++;
-                        }
-                    }
-                }
-            }
-
-            Log::info('DeplacementController: Génération terminée', [
-                'deplacements_crees' => $deplacementsCrees,
-                'deplacements_inter_site' => $deplacementsInterSite
-            ]);
-
-            // Rediriger vers la page des déplacements avec un message de succès
-            return redirect()->route('deplacements.index')->with('success', 
-                "{$deplacementsCrees} déplacements générés ({$deplacementsInterSite} inter-sites)"
-            );
-
-        } catch (\Exception $e) {
-            Log::error('DeplacementController: Erreur lors de la génération', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->route('deplacements.index')->with('error', 
-                'Erreur lors de la génération: ' . $e->getMessage()
-            );
-        }
-    }
-
-    /**
      * Créer un déplacement entre deux sessions
      */
     private function createDeplacement(CourseSession $session1, CourseSession $session2)
@@ -241,7 +170,7 @@ class DeplacementController extends Controller
             $dureeTrajet = 60; // minutes
             
             if ($session1->site_id === $session2->site_id) {
-                $dureeTrajet = 15; // minutes pour même site
+                $dureeTrajet = 5; // minutes pour même site (changé de 15 à 5)
             }
 
             // Créer le déplacement pour chaque groupe commun

@@ -4,7 +4,6 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { ref } from 'vue';
 import { Route, Clock, MapPin, Users, Calendar } from 'lucide-vue-next';
 
@@ -15,13 +14,9 @@ interface Deplacement {
     duree_trajet_minutes: number;
     created_at: string;
     updated_at: string;
-    group: any; // Simplifié pour l'instant
-    sessionDepart: any; // Simplifié pour l'instant
-    sessionArrivee: any; // Simplifié pour l'instant
-    siteDepart: any; // Simplifié pour l'instant
-    siteArrivee: any; // Simplifié pour l'instant
-    roomDepart: any; // Simplifié pour l'instant
-    roomArrivee: any; // Simplifié pour l'instant
+    group: any;
+    session_depart: any;
+    session_arrivee: any;
 }
 
 interface Props {
@@ -36,27 +31,9 @@ interface Props {
         inter_site: number;
         aujourd_hui: number;
     };
-    filters: {
-        date?: string;
-        group_id?: string;
-        inter_site?: boolean;
-    };
 }
 
 const props = defineProps<Props>();
-
-// Debug complet
-console.log('=== DEBUG FRONTEND ===');
-console.log('Props:', props);
-console.log('Deplacements:', props.deplacements);
-console.log('Deplacements data:', props.deplacements?.data);
-console.log('Deplacements data length:', props.deplacements?.data?.length);
-console.log('Premier déplacement:', props.deplacements?.data?.[0]);
-console.log('Type du premier:', typeof props.deplacements?.data?.[0]);
-console.log('Clés du premier:', props.deplacements?.data?.[0] ? Object.keys(props.deplacements?.data?.[0]) : 'NULL');
-console.log('=== FIN DEBUG ===');
-
-
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Déplacements', href: '/deplacements' },
@@ -98,20 +75,18 @@ const generateDeplacements = async () => {
         await form.post(route('deplacements.generate'), {
             onSuccess: () => {
                 generationProgress.value = 100;
+                clearInterval(progressInterval);
                 setTimeout(() => {
                     isGenerating.value = false;
                     generationProgress.value = 0;
-                    // Recharger la page pour voir les nouveaux déplacements
-                    window.location.reload();
-                }, 1000);
+                }, 500);
             },
             onError: () => {
+                clearInterval(progressInterval);
                 isGenerating.value = false;
                 generationProgress.value = 0;
-            },
+            }
         });
-
-        clearInterval(progressInterval);
     } catch (error) {
         console.error('Erreur lors de la génération:', error);
         isGenerating.value = false;
@@ -119,83 +94,79 @@ const generateDeplacements = async () => {
     }
 };
 
-// Computed pour déterminer le type de déplacement
+// Déterminer le type de déplacement
 const getDeplacementType = (deplacement: Deplacement) => {
-    // Vérifier que les propriétés existent
-    if (!deplacement.sessionDepart?.site || !deplacement.sessionArrivee?.site) {
-        return { type: 'unknown', label: 'Inconnu', color: 'bg-gray-100 text-gray-800' };
+    if (!deplacement.session_depart || !deplacement.session_arrivee) {
+        return 'Inconnu';
     }
     
-    if (deplacement.sessionDepart?.site?.id === deplacement.sessionArrivee?.site?.id) {
-        return { type: 'meme_site', label: 'Même site', color: 'bg-blue-100 text-blue-800' };
+    const site_depart = deplacement.session_depart.site?.name || 'Site inconnu';
+    const site_arrivee = deplacement.session_arrivee.site?.name || 'Site inconnu';
+    
+    if (site_depart === site_arrivee) {
+        return 'Même site';
     }
-    return { type: 'inter_site', label: 'Inter-site', color: 'bg-orange-100 text-orange-800' };
+    
+    return 'Inter-site';
 };
 
+// Formater l'heure
+const formatTime = (timeString: string) => {
+    return new Date(timeString).toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
 
+// Formater la date
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+};
 </script>
 
 <template>
-    <Head title="Déplacements" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-6 overflow-x-auto">
-            <!-- En-tête avec statistiques -->
-            <div class="flex flex-col lg:flex-row gap-6">
-                <div class="flex-1">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Déplacements des étudiants
-                    </h1>
-                    <p class="text-gray-600 dark:text-gray-400">
-                        Gestion des trajets entre les différents sites et salles
-                    </p>
-                </div>
-                
-                <!-- Bouton de génération -->
-                <div class="flex items-center gap-4">
-                    <Button 
-                        @click="generateDeplacements" 
-                        :disabled="isGenerating"
-                        class="bg-green-600 hover:bg-green-700"
-                    >
-                        <Route class="w-4 h-4 mr-2" />
-                        {{ isGenerating ? 'Génération...' : 'Générer tous les déplacements' }}
-                    </Button>
-                </div>
-            </div>
-
-            <!-- Barre de progression -->
-            <div v-if="isGenerating" class="w-full">
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                        class="bg-green-600 h-2.5 rounded-full transition-all duration-300"
-                        :style="{ width: generationProgress + '%' }"
-                    ></div>
-                </div>
-                <p class="text-sm text-gray-600 mt-2">Génération en cours... {{ Math.round(generationProgress) }}%</p>
+    <AppLayout>
+        <Head title="Déplacements" />
+        
+        <div class="container mx-auto py-6">
+            <!-- En-tête -->
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Déplacements</h1>
+                <p class="text-gray-600 mt-2">
+                    Gestion des déplacements entre les sessions de cours
+                </p>
             </div>
 
             <!-- Statistiques -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Total déplacements</CardTitle>
+                        <CardTitle class="text-sm font-medium">Total</CardTitle>
                         <Route class="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold">{{ props.stats?.total || 0 }}</div>
-                        <p class="text-xs text-muted-foreground">Tous les déplacements</p>
+                        <div class="text-2xl font-bold">{{ stats.total }}</div>
+                        <p class="text-xs text-muted-foreground">
+                            Déplacements enregistrés
+                        </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Déplacements inter-sites</CardTitle>
+                        <CardTitle class="text-sm font-medium">Inter-sites</CardTitle>
                         <MapPin class="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold text-orange-600">{{ props.stats?.inter_site || 0 }}</div>
-                        <p class="text-xs text-muted-foreground">Entre sites différents</p>
+                        <div class="text-2xl font-bold">{{ stats.inter_site }}</div>
+                        <p class="text-xs text-muted-foreground">
+                            Changements de site
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -205,32 +176,58 @@ const getDeplacementType = (deplacement: Deplacement) => {
                         <Calendar class="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold text-blue-600">{{ props.stats?.aujourd_hui || 0 }}</div>
-                        <p class="text-xs text-muted-foreground">Déplacements du jour</p>
+                        <div class="text-2xl font-bold">{{ stats.aujourd_hui }}</div>
+                        <p class="text-xs text-muted-foreground">
+                            Déplacements du jour
+                        </p>
                     </CardContent>
                 </Card>
             </div>
+
+            <!-- Actions -->
+            <Card class="mb-6">
+                <CardHeader>
+                    <CardTitle>Génération automatique</CardTitle>
+                    <CardDescription>
+                        Générer automatiquement tous les déplacements basés sur les sessions existantes
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button 
+                        @click="generateDeplacements" 
+                        :disabled="isGenerating"
+                        class="w-full md:w-auto"
+                    >
+                        <Route class="h-4 w-4 mr-2" />
+                        {{ isGenerating ? 'Génération en cours...' : 'Générer tous les déplacements' }}
+                    </Button>
+                    
+                    <!-- Barre de progression -->
+                    <div v-if="isGenerating" class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                                class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                                :style="{ width: generationProgress + '%' }"
+                            ></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Progression: {{ Math.round(generationProgress) }}%
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
 
             <!-- Liste des déplacements -->
             <Card>
                 <CardHeader>
                     <CardTitle>Liste des déplacements</CardTitle>
                     <CardDescription>
-                        {{ props.deplacements?.total || 0 }} déplacements au total
+                        {{ deplacements.total }} déplacement(s) trouvé(s)
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="text-center py-4 bg-gray-100 rounded-lg mb-4">
-                        <p class="text-sm text-gray-600">
-                            <strong>DEBUG:</strong> 
-                            Déplacements reçus: {{ props.deplacements?.data?.length || 'undefined' }} | 
-                            Total: {{ props.deplacements?.total || 'undefined' }} | 
-                            Stats: {{ props.stats?.total || 'undefined' }}
-                        </p>
-                    </div>
-
-                    <div v-if="!props.deplacements?.data || props.deplacements.data.length === 0" class="text-center py-8">
-                        <Route class="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <div v-if="deplacements.data.length === 0" class="text-center py-8">
+                        <Route class="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p class="text-gray-500">Aucun déplacement trouvé</p>
                         <p class="text-sm text-gray-400 mt-2">
                             Cliquez sur "Générer tous les déplacements" pour commencer
@@ -239,66 +236,54 @@ const getDeplacementType = (deplacement: Deplacement) => {
 
                     <div v-else class="space-y-4">
                         <div 
-                            v-for="(deplacement, index) in (props.deplacements?.data || [])" 
-                            :key="deplacement?.id || index"
+                            v-for="deplacement in deplacements.data" 
+                            :key="deplacement.id"
                             class="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
                         >
-                            <div class="flex flex-col lg:flex-row gap-4">
-                                <!-- Informations du groupe -->
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="bg-blue-100 p-2 rounded-full">
-                                        <Users class="w-4 h-4 text-blue-600" />
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-2">
+                                            <Clock class="h-4 w-4 text-gray-500" />
+                                            <span class="font-medium">
+                                                {{ formatTime(deplacement.heure_depart) }} → {{ formatTime(deplacement.heure_arrivee) }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <Users class="h-4 w-4 text-gray-500" />
+                                            <span class="text-sm text-gray-600">
+                                                {{ deplacement.group?.name || 'Groupe inconnu' }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <Route class="h-4 w-4 text-gray-500" />
+                                            <span class="text-sm text-gray-600">
+                                                {{ getDureeFormatted(deplacement.duree_trajet_minutes) }}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="min-w-0">
-                                        <p class="font-medium text-gray-900">{{ deplacement.group?.name || 'Groupe inconnu' }}</p>
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800">
-                                            {{ deplacement.sessionDepart?.site?.id === deplacement.sessionArrivee?.site?.id ? 'Même site' : 'Inter-site' }}
+                                    
+                                    <div class="mt-2 text-sm text-gray-600">
+                                        <span class="font-medium">Type:</span> 
+                                        <span :class="{
+                                            'text-blue-600': getDeplacementType(deplacement) === 'Inter-site',
+                                            'text-green-600': getDeplacementType(deplacement) === 'Même site',
+                                            'text-gray-600': getDeplacementType(deplacement) === 'Inconnu'
+                                        }">
+                                            {{ getDeplacementType(deplacement) }}
                                         </span>
                                     </div>
-                                </div>
-
-                                <!-- Trajet -->
-                                <div class="flex-1 flex items-center gap-3">
-                                    <!-- Session de départ -->
-                                    <div class="text-center min-w-0">
-                                        <div class="bg-green-100 p-2 rounded-lg">
-                                            <p class="font-semibold text-green-800">{{ deplacement.sessionDepart?.course?.code || 'Cours inconnu' }}</p>
-                                            <p class="text-xs text-green-600">{{ deplacement.sessionDepart?.course?.title || 'Titre inconnu' }}</p>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mt-1">{{ deplacement.sessionDepart?.site?.name || 'Site inconnu' }}</p>
-                                        <p class="text-xs text-gray-500">{{ deplacement.sessionDepart?.room?.name || 'Salle inconnue' }}</p>
-                                        <p class="text-sm font-medium text-gray-900">{{ new Date(deplacement.heure_depart).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }}</p>
-                                    </div>
-
-                                    <!-- Flèche et durée -->
-                                    <div class="flex flex-col items-center gap-2">
-                                        <div class="w-8 h-0.5 bg-gray-300"></div>
-                                        <div class="bg-gray-100 p-2 rounded-full">
-                                            <Clock class="w-4 h-4 text-gray-600" />
-                                        </div>
-                                        <div class="w-8 h-0.5 bg-gray-300"></div>
-                                        <p class="text-xs text-gray-600 font-medium">
-                                            {{ getDureeFormatted(deplacement.duree_trajet_minutes) }}
-                                        </p>
-                                    </div>
-
-                                    <!-- Session d'arrivée -->
-                                    <div class="text-center min-w-0">
-                                        <div class="bg-purple-100 p-2 rounded-lg">
-                                            <p class="font-semibold text-purple-800">{{ deplacement.sessionArrivee?.course?.code || 'Cours inconnu' }}</p>
-                                            <p class="text-xs text-purple-600">{{ deplacement.sessionArrivee?.course?.title || 'Titre inconnu' }}</p>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mt-1">{{ deplacement.sessionArrivee?.site?.name || 'Site inconnu' }}</p>
-                                        <p class="text-xs text-gray-500">{{ deplacement.sessionArrivee?.room?.name || 'Salle inconnue' }}</p>
-                                        <p class="text-sm font-medium text-gray-900">{{ new Date(deplacement.heure_arrivee).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }}</p>
+                                    
+                                    <div class="mt-1 text-xs text-gray-500">
+                                        {{ formatDate(deplacement.heure_depart) }}
                                     </div>
                                 </div>
-
-                                <!-- Date -->
-                                <div class="text-right">
-                                    <p class="text-sm text-gray-600">{{ new Date(deplacement.heure_depart).toLocaleDateString('fr-FR') }}</p>
+                                
+                                <div class="flex items-center space-x-2">
                                     <Link 
-                                        :href="route('deplacements.show', deplacement?.id || 0)"
+                                        :href="route('deplacements.show', deplacement.id)"
                                         class="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                     >
                                         Voir détails
@@ -309,18 +294,20 @@ const getDeplacementType = (deplacement: Deplacement) => {
                     </div>
 
                     <!-- Pagination -->
-                    <div v-if="props.deplacements?.last_page && props.deplacements.last_page > 1" class="mt-6 flex justify-center">
-                        <div class="flex gap-2">
-                            <Button 
-                                v-for="page in props.deplacements.last_page" 
+                    <div v-if="deplacements.last_page > 1" class="mt-6 flex justify-center">
+                        <div class="flex space-x-2">
+                            <Link 
+                                v-for="page in deplacements.last_page" 
                                 :key="page"
-                                :variant="page === props.deplacements?.current_page ? 'default' : 'outline'"
-                                size="sm"
                                 :href="route('deplacements.index', { page })"
-                                as="a"
+                                :class="{
+                                    'bg-blue-600 text-white': page === deplacements.current_page,
+                                    'bg-gray-200 text-gray-700 hover:bg-gray-300': page !== deplacements.current_page
+                                }"
+                                class="px-3 py-2 rounded-md text-sm font-medium"
                             >
                                 {{ page }}
-                            </Button>
+                            </Link>
                         </div>
                     </div>
                 </CardContent>

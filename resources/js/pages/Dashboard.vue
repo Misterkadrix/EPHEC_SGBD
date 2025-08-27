@@ -37,6 +37,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                         :universities="calendarData.universities"
                         :groups="calendarData.groups || []"
                         :sessions="calendarData.sessions || []"
+                        :deplacements="calendarData.deplacements || []"
                     />
                 </div>
                 <div v-else class="text-center py-8">

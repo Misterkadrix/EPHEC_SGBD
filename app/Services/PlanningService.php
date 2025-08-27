@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CourseSession;
+use App\Models\Deplacement;
 use App\Models\Group;
 use App\Models\Room;
 use App\Models\Site;
@@ -397,5 +398,154 @@ class PlanningService
                 });
             })
             ->exists();
+    }
+
+    /**
+     * Générer un planning complet avec déplacements intégrés
+     */
+    public function generatePlanningWithDeplacements(Group $group, Carbon $startDate, Carbon $endDate): array
+    {
+        $planning = [];
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            $dayPlanning = $this->getDayPlanning($group, $currentDate);
+            if (!empty($dayPlanning)) {
+                $planning[$currentDate->format('Y-m-d')] = $dayPlanning;
+            }
+            $currentDate->addDay();
+        }
+
+        return $planning;
+    }
+
+    /**
+     * Obtenir le planning d'une journée avec déplacements
+     */
+    private function getDayPlanning(Group $group, Carbon $date): array
+    {
+        // Récupérer toutes les sessions du groupe pour cette journée
+        $sessions = CourseSession::whereHas('sessionGroups', function ($query) use ($group) {
+            $query->where('group_id', $group->id);
+        })
+        ->whereDate('start_at', $date)
+        ->orderBy('start_at')
+        ->with(['course', 'site', 'room'])
+        ->get();
+
+        if ($sessions->isEmpty()) {
+            return [];
+        }
+
+        $dayPlanning = [];
+        $previousSession = null;
+
+        foreach ($sessions as $session) {
+            // Ajouter le déplacement si nécessaire
+            if ($previousSession) {
+                $deplacement = $this->getDeplacementBetweenSessions($previousSession, $session, $group);
+                if ($deplacement) {
+                    $dayPlanning[] = [
+                        'type' => 'deplacement',
+                        'start_time' => $deplacement->heure_depart,
+                        'end_time' => $deplacement->heure_arrivee,
+                        'duration' => $deplacement->duree_trajet_minutes,
+                        'from_site' => $deplacement->siteDepart->name,
+                        'to_site' => $deplacement->siteArrivee->name,
+                        'from_room' => $deplacement->roomDepart->name,
+                        'to_room' => $deplacement->roomArrivee->name,
+                        'is_inter_site' => $deplacement->site_depart_id !== $deplacement->site_arrivee_id,
+                        'color' => $deplacement->site_depart_id === $deplacement->site_arrivee_id ? 'blue' : 'orange',
+                    ];
+                }
+            }
+
+            // Ajouter la session
+            $dayPlanning[] = [
+                'type' => 'session',
+                'start_time' => $session->start_at,
+                'end_time' => $session->end_at,
+                'course_code' => $session->course->code,
+                'course_title' => $session->course->title,
+                'site' => $session->site->name,
+                'room' => $session->room->name,
+                'is_main_site' => $session->site_id === $group->main_site_id,
+                'color' => $session->site_id === $group->main_site_id ? 'green' : 'purple',
+            ];
+
+            $previousSession = $session;
+        }
+
+        return $dayPlanning;
+    }
+
+    /**
+     * Obtenir le déplacement entre deux sessions
+     */
+    private function getDeplacementBetweenSessions(CourseSession $session1, CourseSession $session2, Group $group): ?Deplacement
+    {
+        return Deplacement::where('session_depart_id', $session1->id)
+            ->where('session_arrivee_id', $session2->id)
+            ->where('group_id', $group->id)
+            ->with(['siteDepart', 'siteArrivee', 'roomDepart', 'roomArrivee'])
+            ->first();
+    }
+
+    /**
+     * Vérifier si un créneau est disponible pour une session
+     */
+    public function isTimeSlotAvailable(Group $group, Carbon $startTime, Carbon $endTime, int $excludeSessionId = null): bool
+    {
+        // Vérifier les sessions existantes
+        $conflictingSessions = CourseSession::whereHas('sessionGroups', function ($query) use ($group) {
+            $query->where('group_id', $group->id);
+        })
+        ->where(function ($query) use ($startTime, $endTime) {
+            $query->whereBetween('start_at', [$startTime, $endTime])
+                ->orWhereBetween('end_at', [$startTime, $endTime])
+                ->orWhere(function ($q) use ($startTime, $endTime) {
+                    $q->where('start_at', '<=', $startTime)
+                        ->where('end_at', '>=', $endTime);
+                });
+        });
+
+        if ($excludeSessionId) {
+            $conflictingSessions->where('id', '!=', $excludeSessionId);
+        }
+
+        return $conflictingSessions->count() === 0;
+    }
+
+    /**
+     * Calculer la durée de déplacement optimale entre deux sites
+     */
+    public function calculateOptimalTravelTime(int $fromSiteId, int $toSiteId): int
+    {
+        if ($fromSiteId === $toSiteId) {
+            return 5; // 5 minutes pour même site
+        }
+        
+        return 60; // 1 heure pour changement de site
+    }
+
+    /**
+     * Optimiser l'ordre des sessions pour minimiser les déplacements
+     */
+    public function optimizeSessionOrder(Collection $sessions, Group $group): Collection
+    {
+        // Priorité : sessions sur le site principal en premier
+        return $sessions->sortBy(function ($session) use ($group) {
+            $priority = 0;
+            
+            // Site principal = priorité maximale
+            if ($session->site_id === $group->main_site_id) {
+                $priority += 1000;
+            }
+            
+            // Heure de début (matin = priorité)
+            $priority += (24 - $session->start_at->hour) * 10;
+            
+            return -$priority; // Tri décroissant
+        });
     }
 }

@@ -66,7 +66,7 @@ class DeplacementSeeder extends Seeder
             
             // Si c'est le même site, durée plus courte
             if ($session1->site_id === $session2->site_id) {
-                $dureeTrajet = 15; // 15 minutes pour même site
+                $dureeTrajet = 5; // 5 minutes pour même site (optimisé)
             }
 
             Deplacement::create([
