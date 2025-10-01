@@ -33,8 +33,8 @@ Courte description : générateur et gestionnaire d’horaires multi-université
 Technos détectées :  
 - **Frontend** : Vue 3 (TypeScript), [@inertiajs/vue3](https://inertiajs.com/), TailwindCSS  
 - **Build tools** : Vite, Prettier, ESLint  
-- **Backend** : **TODO:** (non détecté dans ce repo, à compléter)
-- **DB** : **TODO:** (non détecté dans ce repo, à compléter)
+- **Backend** : Laravel
+- **DB** : 
 
 Monorepo / multi-projets :  
 - **Mono-repo** (frontend et potentiellement backend dans le même repo, mais seul le frontend est visible ici)
